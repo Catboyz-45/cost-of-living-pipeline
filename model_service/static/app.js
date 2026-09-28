@@ -4,7 +4,7 @@
  */
 (function () {
   const { line, bars, map, sparkline, divergingLegend, cssVar, monthLabel } = window.Charts;
-  const { plate, hydrate } = window.Icons;
+  const { plate, hydrate, url: iconUrl } = window.Icons;
   const $ = (id) => document.getElementById(id);
   const cache = {};
 
@@ -24,6 +24,10 @@
   const compact = (v) => Number(v).toLocaleString("th-TH");
   const bahtPrice = (v) => (v === null || v === undefined ? "–" : `${num(v, v >= 1000 ? 0 : 2)} ฿`);
   const el = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
+  // element ที่มีไอคอน (CSS วาดไอคอนจาก --icon)
+  const withIcon = (node, name) => { node.style.setProperty("--icon", iconUrl(name)); return node; };
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs = {}, parent) => { const node = document.createElementNS(SVG_NS, tag); for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); if (parent) parent.appendChild(node); return node; };
   const changeColor = (value) => (value > 0.05 ? cssVar("--bad") : value < -0.05 ? cssVar("--good") : cssVar("--ink-2"));
   // "แพงขึ้น 2.53%" / "ถูกลง 1.2%" / "ราคาเท่าเดิม"
   const moveText = (value, digits = 2) => (value === null || value === undefined ? "–"
@@ -60,6 +64,118 @@
     }));
     if (value !== undefined) select.value = value;
   }
+  // ---------- ตัวเลือกที่เข้าธีม ----------
+  // รายการของ <select> ตอนเปิดวาดโดยระบบ (macOS/Windows) แต่งสีไม่ได้ จึงซ่อน <select> ไว้เก็บค่า
+  // แล้วแสดงเป็นปุ่มหรือรายการที่วาดเอง โค้ดเดิมยังอ่าน/ตั้ง select.value และฟัง "change" ได้เหมือนเดิม
+  const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  function watchSelect(select, sync) {
+    Object.defineProperty(select, "value", {
+      configurable: true,
+      get() { return nativeValue.get.call(this); },
+      set(v) { nativeValue.set.call(this, v); sync(); },
+    });
+    new MutationObserver(sync).observe(select, { childList: true });
+  }
+  const pick = (select, value) => { select.value = value; select.dispatchEvent(new Event("change")); };
+
+  // ตัวเลือกไม่กี่อย่าง: แสดงเป็นปุ่มเรียงกัน
+  function chipSelect(select) {
+    const group = el("div", "chips chips-wrap");
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", select.getAttribute("aria-label") || "");
+    select.hidden = true;
+    select.after(group);
+    const sync = () => group.replaceChildren(...[...select.options].map((option) => {
+      const on = option.value === select.value;
+      const button = el("button", on ? "active" : "", option.textContent.trim());
+      button.type = "button";
+      button.dataset.value = option.value;
+      button.setAttribute("aria-pressed", String(on));
+      return button;
+    }));
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-value]");
+      if (button && button.dataset.value !== select.value) pick(select, button.dataset.value);
+    });
+    watchSelect(select, sync);
+    sync();
+  }
+
+  // ตัวเลือกยาว (สินค้า, จังหวัด): ปุ่มที่เปิดรายการพร้อมช่องค้นหา
+  function picker(select, { searchPlaceholder = "ค้นหา" } = {}) {
+    select.hidden = true;
+    const wrap = el("div", "picker");
+    const button = withIcon(el("button", "picker-button"), "chevron");
+    button.type = "button";
+    button.setAttribute("aria-haspopup", "listbox");
+    button.setAttribute("aria-expanded", "false");
+    const labelledBy = select.getAttribute("aria-labelledby");
+    const text = el("span", "picker-text");
+    if (labelledBy) { text.id = `${select.id}-value`; button.setAttribute("aria-labelledby", `${labelledBy} ${text.id}`); }
+    button.appendChild(text);
+    const panel = el("div", "picker-panel");
+    panel.hidden = true;
+    const search = el("input", "picker-search");
+    search.type = "search";
+    search.placeholder = searchPlaceholder;
+    search.setAttribute("aria-label", searchPlaceholder);
+    const list = el("div", "picker-list");
+    list.setAttribute("role", "listbox");
+    panel.append(search, list);
+    wrap.append(button, panel);
+    select.after(wrap);
+
+    const render = () => {
+      const query = search.value.trim();
+      const options = [...select.options].filter((o) => !query || o.textContent.includes(query));
+      list.replaceChildren(...options.map((option) => {
+        const on = option.value === select.value;
+        const item = el("button", `picker-option${on ? " selected" : ""}`, option.textContent.trim());
+        item.type = "button";
+        item.dataset.value = option.value;
+        item.setAttribute("role", "option");
+        item.setAttribute("aria-selected", String(on));
+        return item;
+      }));
+      if (!options.length) list.appendChild(el("div", "picker-empty", "ไม่พบที่ค้นหา"));
+    };
+    const sync = () => {
+      text.textContent = select.selectedOptions[0]?.textContent.trim() || "–";
+      if (!panel.hidden) render();
+    };
+    const open = () => {
+      panel.hidden = false;
+      button.setAttribute("aria-expanded", "true");
+      search.value = "";
+      search.hidden = select.options.length <= 8;
+      render();
+      (search.hidden ? list.querySelector(".selected") || list.firstChild : search).focus();
+      list.querySelector(".selected")?.scrollIntoView({ block: "nearest" });
+    };
+    const close = (refocus) => {
+      if (panel.hidden) return;
+      panel.hidden = true;
+      button.setAttribute("aria-expanded", "false");
+      if (refocus) button.focus();
+    };
+    const choose = (value) => { close(true); if (value !== select.value) pick(select, value); };
+    button.addEventListener("click", () => (panel.hidden ? open() : close()));
+    search.addEventListener("input", render);
+    list.addEventListener("click", (event) => { const item = event.target.closest("[data-value]"); if (item) choose(item.dataset.value); });
+    panel.addEventListener("keydown", (event) => {
+      const items = [...list.querySelectorAll("[data-value]")];
+      const index = items.indexOf(document.activeElement);
+      if (event.key === "Escape") { event.preventDefault(); close(true); }
+      else if (event.key === "ArrowDown") { event.preventDefault(); items[Math.min(items.length - 1, index + 1)]?.focus(); }
+      else if (event.key === "ArrowUp") { event.preventDefault(); if (index <= 0 && !search.hidden) search.focus(); else items[Math.max(0, index - 1)]?.focus(); }
+      else if (event.key === "Enter" && document.activeElement === search && items.length) { event.preventDefault(); choose(items[0].dataset.value); }
+    });
+    document.addEventListener("pointerdown", (event) => { if (!wrap.contains(event.target)) close(); });
+    wrap.addEventListener("focusout", (event) => { if (event.relatedTarget && !wrap.contains(event.relatedTarget)) close(); });
+    watchSelect(select, sync);
+    sync();
+  }
+
   function tableRows(table, headers, rows, onClick) {
     table.replaceChildren();
     const head = el("tr");
@@ -106,9 +222,6 @@
   const summaryP = () => once("summary", () => api("/api/dashboard/summary"));
   const pricesP = () => once("prices", () => api("/api/prices"));
   const metricsP = () => once("metrics", () => api("/api/model/metrics"));
-  const commodityOptions = (list) => list
-    .filter((c) => isEverydayCategory(c.commodity_code))
-    .map((c) => ({ value: c.commodity_code, label: `${"   ".repeat(c.level - 1)}${plainName(c.commodity_code, c.commodity_name)}` }));
   const areaOptions = (list) => list.map((a) => ({ value: a.area_key, label: a.area_type === "region" ? `◆ ${a.area_name}` : a.area_name }));
 
   // ---------- ปุ่ม i อธิบายคำศัพท์ (ชี้หรือกดเพื่อดู) ----------
@@ -139,7 +252,8 @@
   const PAGE_SIZE = 24;
   let selectedProduct = null;
   let priceGroup = "";
-  let priceLimit = PAGE_SIZE;
+  // หน้าแรกเริ่มที่ของกินพื้นฐาน 6 อย่าง กด "ดูสินค้าอื่น" หรือค้นหาแล้วค่อยแสดงเพิ่ม
+  let priceLimit = STAPLES.length;
   const perUnit = (unit) => (unit || "").replace(/^บาท/, "");
   const yoyPct = (p) => (p.price_1y_ago ? (p.latest_price / p.price_1y_ago - 1) * 100 : null);
 
@@ -157,7 +271,7 @@
 
   function priceCard(container, product) {
     const look = productLook(product.label);
-    const card = el("button", `price-card tone-${look.tone}`);
+    const card = el("button", "price-card");
     card.type = "button";
     card.dataset.product = product.product_id;
     const head = el("div", "price-head");
@@ -169,15 +283,15 @@
     const yoy = yoyPct(product);
     card.append(head, priceRow, yoy === null ? el("span", "delta flat", "ยังไม่มีราคาปีก่อน") : deltaNode(yoy, "% จากปีก่อน"));
     const spark = el("div", "spark");
-    card.append(spark, el("div", "muted", `ราคาวันที่ ${thDay(product.price_date)}`));
+    card.append(spark, el("div", "muted", `12 เดือนล่าสุด · ราคาวันที่ ${thDay(product.price_date)}`));
     card.addEventListener("click", () => {
       selectedProduct = product;
-      drawPrice();
-      $("price-detail").scrollIntoView({ behavior: "smooth", block: "start" });
+      showPriceDetail();
     });
     container.appendChild(card);
-    // วาดเส้นหลังใส่การ์ดลงหน้าแล้ว เพื่อให้อ่านสีโทนของการ์ดได้
-    if (product.spark && product.spark.length > 1) sparkline(spark, product.spark, { height: 32 });
+    // เส้นเล็ก 12 เดือน: สีตามทิศทางจากปีก่อน (ส้ม = แพงขึ้น, น้ำเงิน = ถูกลง)
+    const sparkColor = yoy === null || Math.abs(yoy) < 0.05 ? cssVar("--muted") : yoy > 0 ? cssVar("--up") : cssVar("--down");
+    if (product.spark && product.spark.length > 1) sparkline(spark, product.spark.slice(-12), { height: 44, color: sparkColor });
   }
 
   async function renderPriceExplorer() {
@@ -199,12 +313,19 @@
         drawPriceGrid(products);
       });
       $("price-search").addEventListener("input", () => { priceLimit = PAGE_SIZE; drawPriceGrid(products); });
-      $("price-more").addEventListener("click", () => { priceLimit += PAGE_SIZE; drawPriceGrid(products); });
+      $("price-more").addEventListener("click", () => { priceLimit = priceLimit < PAGE_SIZE ? PAGE_SIZE : priceLimit + PAGE_SIZE; drawPriceGrid(products); });
     }
     drawPriceGrid(products);
     if (!selectedProduct) selectedProduct = products.find((p) => p.product_id === STAPLES[0]) || products[0] || null;
-    await drawPrice();
+    if (!$("price-detail").hidden) await drawPrice();
     return products;
+  }
+
+  // กราฟราคาย้อนหลังแสดงเมื่อกดการ์ดสินค้า (หน้าแรกจะได้ไม่ยาวเกิน)
+  async function showPriceDetail() {
+    $("price-detail").hidden = false;
+    await drawPrice();
+    $("price-detail").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function drawPriceGrid(products) {
@@ -219,10 +340,11 @@
     else if (!matched.length) grid.appendChild(el("div", "empty-state", "ไม่พบสินค้าที่ค้นหา"));
     for (const product of matched.slice(0, priceLimit)) priceCard(grid, product);
     const latest = products.reduce((max, p) => (p.price_date > max ? p.price_date : max), "");
-    $("price-count").textContent = products.length
-      ? `ราคาจริงจากกรมการค้าภายใน ${compact(products.length)} รายการ · สำรวจล่าสุด ${thDay(latest)} · แสดง ${compact(Math.min(matched.length, priceLimit))} จาก ${compact(matched.length)} ที่ตรงเงื่อนไข`
-      : "";
+    $("price-count").textContent = products.length ? `${compact(products.length)} รายการ · สำรวจล่าสุด ${thDay(latest)}` : "";
     $("price-more").hidden = matched.length <= priceLimit;
+    $("price-more").textContent = priceLimit < PAGE_SIZE ? `ดูสินค้าอื่น (ทั้งหมด ${compact(matched.length)} รายการ)` : "แสดงเพิ่ม";
+    // ปุ่มกลุ่มสินค้าแสดงเมื่อเริ่มดูสินค้าอื่นหรือค้นหาแล้ว
+    $("price-groups").hidden = priceLimit < PAGE_SIZE && !query && !priceGroup;
     document.querySelectorAll(".price-card").forEach((card) => card.classList.toggle("active", card.dataset.product === selectedProduct?.product_id));
   }
 
@@ -241,7 +363,7 @@
     }
     try {
       const data = await api(`/api/prices/history?product_id=${product.product_id}`);
-      const color = cssVar("--series-1");
+      const color = cssVar("--actual");
       line(container, {
         yFormat: (v, isAxis) => (isAxis ? num(v, Math.abs(v) < 10 ? 2 : v < 100 ? 1 : 0) : bahtPrice(v)),
         endLabels: false, forceLegend: true, ariaLabel: "ราคาจริงย้อนหลัง",
@@ -262,88 +384,94 @@
     const latest = summary.latest_period;
     const headline = summary.trend["00000"], food = summary.trend["10000"], energy = summary.trend["92000"];
     const last = (list) => list[list.length - 1] || {};
-    const prev = (list) => list[list.length - 2] || {};
     const inflation = last(headline).yoy;
 
     document.querySelectorAll("[data-latest]").forEach((node) => { node.textContent = thMonth(latest); });
+    // พาดหัว: ของที่ปีก่อนจ่าย 100 บาท วันนี้ต้องจ่าย 102.53 บาท
     const hero = $("hero");
-    hero.replaceChildren();
-    const heroHead = el("div", "tile-head");
-    const heroLabel = el("div", "label", `ของโดยรวม ${thMonth(latest)} เทียบกับปีก่อน `);
-    const info = el("button", "info", "i");
-    info.type = "button";
-    info.dataset.tip = "นี่คือตัวเลข \"เงินเฟ้อ\" ที่ข่าวพูดถึง: ราคาของโดยรวมเทียบกับเดือนเดียวกันของปีก่อน คิดจากสินค้าและบริการหลายร้อยรายการที่คนไทยซื้อจริง ข้อมูลจาก สนค. กระทรวงพาณิชย์";
-    heroLabel.appendChild(info);
-    heroHead.append(plate("trend"), heroLabel);
-    hero.append(heroHead, el("div", "value", moveText(inflation)));
-    hero.appendChild(moneyLine("ของที่ปีก่อนจ่าย ", "100 บาท", " ตอนนี้ต้องจ่าย ", `${num(100 + inflation, 2)} บาท`));
-    const spark = el("div", "spark");
-    hero.appendChild(spark);
-    sparkline(spark, headline.map((p) => p.yoy), { includeZero: true });
-    hero.appendChild(el("div", "muted", `เส้น: ย้อนหลัง 24 เดือน · เดือนก่อน${moveText(prev(headline).yoy)}`));
+    const numSpan = (text, cls = "") => el("span", `num ${cls}`.trim(), text);
+    const heroLine = (...parts) => { const span = el("span", "line"); span.append(...parts); return span; };
+    hero.replaceChildren(
+      heroLine(document.createTextNode("ของที่ปีก่อนจ่าย "), numSpan("100"), document.createTextNode(" บาท")), el("br"),
+      heroLine(document.createTextNode("วันนี้ต้องจ่าย "), numSpan(num(100 + inflation, 2), inflation > 0 ? "up" : inflation < 0 ? "down" : ""), document.createTextNode(" บาท")),
+    );
+    yoyBars($("chart-yoy"), headline.slice(-12));
 
     const tiles = $("overview-tiles");
     tiles.replaceChildren();
-    // สีเส้นเล็กตรงกับสีของหมวดเดียวกันในกราฟย้อนหลังหลายปี (อาหาร = series-2, พลังงาน = series-3)
-    tile(tiles, {
-      label: "ค่าอาหารและเครื่องดื่ม", value: pct(last(food).yoy), sub: `จากปีก่อน · ของ 100 บาท ตอนนี้ ${num(100 + last(food).yoy, 2)} บาท`,
-      icon: "bowl", tone: "orange", spark: (holder) => sparkline(holder, food.map((p) => p.yoy), { color: cssVar("--series-2"), height: 36, includeZero: true }),
-    });
-    tile(tiles, {
-      label: "ค่าน้ำมัน ไฟ แก๊ส", value: pct(last(energy).yoy), sub: `จากปีก่อน · ของ 100 บาท ตอนนี้ ${num(100 + last(energy).yoy, 2)} บาท`,
-      icon: "bolt", tone: "green", spark: (holder) => sparkline(holder, energy.map((p) => p.yoy), { color: cssVar("--series-3"), height: 36, includeZero: true }),
-    });
-    const fuelTile = tile(tiles, { label: "น้ำมันแก๊สโซฮอล์ 95 วันนี้", value: "–", sub: "ราคาหน้าปั๊ม กรุงเทพฯ (ปตท.)", icon: "fuel", tone: "blue" });
+    tile(tiles, { label: "ค่าอาหารและเครื่องดื่ม", value: pct(last(food).yoy), sub: "จากปีก่อน", icon: "bowl" });
+    tile(tiles, { label: "ค่าน้ำมัน ไฟ แก๊ส", value: pct(last(energy).yoy), sub: "จากปีก่อน", icon: "bolt" });
+    const fuelTile = tile(tiles, { label: "แก๊สโซฮอล์ 95 วันนี้", value: "–", sub: "ราคาหน้าปั๊ม กรุงเทพฯ", icon: "fuel" });
     const wage = summary.bangkok_wage;
     const wageTile = tile(tiles, {
-      label: "ค่าแรงขั้นต่ำ กรุงเทพฯ",
+      label: "ค่าแรงขั้นต่ำ กทม.",
       value: wage ? `${num(wage.latest.nominal_wage, 0)} ฿/วัน` : "–",
-      sub: "ค่าแรง 1 วัน", icon: "wallet", tone: "teal",
+      sub: "ค่าแรง 1 วัน", icon: "wallet",
     });
-
-    const volume = summary.volume;
-    $("freshness").replaceChildren(
-      document.createTextNode("ข้อมูลถึง "), el("b", "", thMonth(latest)), el("br"),
-      el("b", "", compact(volume.cpi_rows)), document.createTextNode(" แถวดัชนี · "),
-      el("b", "", String(volume.provinces + 1)), document.createTextNode(" จังหวัด"),
-    );
+    $("freshness").textContent = `ข้อมูลถึง ${thMonth(latest)}`;
 
     const [products, categories] = await Promise.all([
       renderPriceExplorer(),
       once("cat2", () => api("/api/categories/yoy?level=2")),
     ]);
     const egg = products.find((p) => p.product_id === "P11028");
-    if (wage && egg) wageTile.querySelector(".sub").textContent = `ซื้อไข่ไก่ได้วันละ ${num(wage.latest.nominal_wage / egg.latest_price, 0)} ฟอง`;
+    if (wage && egg) wageTile.querySelector(".sub").textContent = `ซื้อไข่ได้วันละ ${num(wage.latest.nominal_wage / egg.latest_price, 0)} ฟอง`;
     const fuel = products.find((p) => p.product_id === "F52002");
     if (fuel) {
       fuelTile.querySelector(".value").textContent = `${bahtPrice(fuel.latest_price)}/ลิตร`;
       const yoy = yoyPct(fuel);
-      if (yoy !== null) fuelTile.insertBefore(deltaNode(yoy, "% จากปีก่อน"), fuelTile.querySelector(".sub"));
+      if (yoy !== null) fuelTile.querySelector(".sub").replaceWith(deltaNode(yoy, "% จากปีก่อน"));
     }
     renderAiBanner(summary.forecast["00000"], products);
     renderDishes();
 
     // หมวดค่าใช้จ่ายจริงเท่านั้น (ตัดกลุ่มสำหรับนักวิเคราะห์) เรียงจากแพงขึ้นมากสุด
-    const everyday = categories.items.filter((item) => isEverydayCategory(item.commodity_code) && item.change_yoy !== null);
-    $("category-sub").textContent = `ทั้งประเทศ · ${categories.period ? thMonth(categories.period) : ""} เทียบกับเดือนเดียวกันของปีก่อน · แดง = แพงขึ้น ฟ้า = ถูกลง`;
-    bars($("chart-categories"), everyday.map((item) => ({
+    const everyday = categories.items.filter((item) => isEverydayCategory(item.commodity_code) && item.change_yoy !== null)
+      .sort((a, b) => b.change_yoy - a.change_yoy);
+    const shown = [...everyday.filter((i) => i.change_yoy > 0).slice(0, 5), ...everyday.filter((i) => i.change_yoy < 0).slice(-3)];
+    $("category-sub").textContent = `5 เรื่องที่แพงขึ้นมากสุด และ 3 เรื่องที่ถูกลงมากสุด · ${categories.period ? thMonth(categories.period) : ""} เทียบกับปีก่อน`;
+    bars($("chart-categories"), shown.map((item) => ({
       label: plainName(item.commodity_code, item.commodity_name),
       value: item.change_yoy,
+      color: cssVar(item.change_yoy > 0 ? "--up" : "--down"),
       extra: [{ label: "จากเดือนก่อน", value: pct(item.change_mom) }],
     })), { format: (v) => pct(v), valueLabel: "จากปีก่อน" });
 
     // ประโยคสรุปบนสุดของหน้า
     const staples = STAPLES.map((id) => products.find((p) => p.product_id === id)).filter((p) => p && yoyPct(p) !== null);
     const sortedStaples = [...staples].sort((a, b) => yoyPct(b) - yoyPct(a));
-    const parts = [`ของโดยรวม${moveText(inflation)} จากปีก่อน — ของที่ปีก่อนจ่าย 100 บาท ตอนนี้ต้องจ่าย ${num(100 + inflation, 2)} บาท`];
-    if (everyday[0]) parts.push(`เรื่องที่แพงขึ้นมากที่สุดคือ${plainName(everyday[0].commodity_code, everyday[0].commodity_name)} (${pct(everyday[0].change_yoy, 1)})`);
+    const lede = $("overview-takeaway");
+    lede.replaceChildren(document.createTextNode(`${moveText(inflation)} จากปีก่อน`));
     if (sortedStaples.length) {
       const up = sortedStaples[0], down = sortedStaples[sortedStaples.length - 1];
-      parts.push(`ของกินพื้นฐาน: ${up.label}${moveText(yoyPct(up), 0)}${yoyPct(down) < 0 ? ` ส่วน${down.label}${moveText(yoyPct(down), 0)}` : ""}`);
+      lede.append(document.createTextNode(" ของกินพื้นฐานที่ขึ้นแรงสุดคือ"), el("b", "", `${up.label} (${pct(yoyPct(up), 0)})`));
+      if (yoyPct(down) < 0) lede.append(document.createTextNode(" ส่วน"), el("b", "", `${down.label}ถูกลง (${pct(yoyPct(down), 0)})`));
     }
-    $("overview-takeaway").textContent = `${parts.join(" · ")}`;
+  }
 
-    await renderLongrun();
+  // แท่งเงินเฟ้อรายเดือน: ขึ้น = ส้ม ลง = น้ำเงิน เดือนล่าสุดเข้มสุด ชี้เพื่อดูตัวเลข
+  function yoyBars(container, points) {
+    container.replaceChildren();
+    const values = points.map((p) => p.yoy).filter(Number.isFinite);
+    if (!values.length) return;
+    const width = 560, height = 96, gap = 4, n = points.length, plot = height - 20;
+    const lo = Math.min(0, ...values), hi = Math.max(0, ...values), span = hi - lo || 1;
+    const bw = (width - gap * (n - 1)) / n;
+    const zero = (hi / span) * plot;
+    const svg = svgEl("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": `เงินเฟ้อ ${n} เดือนล่าสุด` }, container);
+    points.forEach((p, i) => {
+      const x = i * (bw + gap), v = p.yoy;
+      const h = Math.max(1.5, (Math.abs(v) / span) * plot);
+      svgEl("rect", { x, y: v >= 0 ? zero - h : zero, width: bw, height: h, rx: 3, fill: cssVar(v >= 0 ? "--up" : "--down"), opacity: i === n - 1 ? 1 : 0.55 }, svg);
+      const hit = svgEl("rect", { x, y: 0, width: bw + gap, height: plot, fill: "transparent" }, svg);
+      hit.addEventListener("pointermove", (event) => Charts.showTooltip(event, thMonth(p.period), [{ label: "จากปีก่อน", value: pct(v), color: cssVar(v >= 0 ? "--up" : "--down") }]));
+      hit.addEventListener("pointerleave", Charts.hideTooltip);
+    });
+    svgEl("line", { x1: 0, x2: width, y1: zero, y2: zero, stroke: cssVar("--muted"), "stroke-width": 1 }, svg);
+    for (const [i, anchor] of [[0, "start"], [n - 1, "end"]]) {
+      const label = svgEl("text", { x: anchor === "start" ? 0 : width, y: height - 3, "text-anchor": anchor, class: "axis-text" }, svg);
+      label.textContent = thMonth(points[i].period);
+    }
   }
 
   async function renderLongrun() {
@@ -395,45 +523,51 @@
     document.querySelectorAll("#dish-chips button").forEach((b) => b.classList.toggle("active", b.dataset.dish === dish.id));
     // ใบเสร็จวัตถุดิบ
     const receipt = $("dish-receipt");
-    receipt.replaceChildren(el("div", "receipt-title", dish.name));
+    receipt.replaceChildren(el("div", "receipt-kicker", "ใบเสร็จวัตถุดิบ"), el("div", "receipt-title", dish.name), el("div", "receipt-rule"));
     for (const item of dish.ingredients) {
       const row = el("div", "receipt-row");
-      row.append(el("span", "", item.text), el("span", "receipt-cost", bahtPrice(item.cost)));
+      row.append(el("span", "", item.text), el("span", "receipt-cost", num(item.cost, 2)));
       receipt.appendChild(row);
     }
     const total = el("div", "receipt-row receipt-total");
-    total.append(el("span", "", "รวมค่าวัตถุดิบ"), el("span", "receipt-cost", bahtPrice(dish.cost_now)));
-    receipt.append(total, el("div", "muted receipt-note", `ราคาจริง ${thDay(dish.price_date)} · ไม่รวมกะเพรา พริก เครื่องปรุง ค่าแก๊ส`));
+    total.append(el("span", "", "รวม 1 จาน"), el("span", "receipt-cost", bahtPrice(dish.cost_now)));
+    receipt.append(el("div", "receipt-rule"), total, el("div", "receipt-note", `ราคา ${thDay(dish.price_date)} · ไม่รวมเครื่องปรุง ค่าแก๊ส`));
 
-    // ไทม์ไลน์: 10 ปีก่อน → 5 ปีก่อน → ปีก่อน → วันนี้ → AI ทาย
-    const timeline = $("dish-timeline");
-    timeline.replaceChildren();
+    // ประโยคเทียบกับอดีตที่ไกลที่สุดที่มีข้อมูล
+    const [baseLabel, base] = [["10 ปีก่อน", dish.cost_10y_ago], ["5 ปีก่อน", dish.cost_5y_ago], ["ปีก่อน", dish.cost_1y_ago]].find(([, v]) => v) || [];
+    const headline = $("dish-sub");
+    headline.replaceChildren();
+    if (base) {
+      const change = (dish.cost_now / base - 1) * 100;
+      headline.append(
+        el("b", "", `${change >= 0 ? "แพงกว่า" : "ถูกกว่า"} ${baseLabel} ${num(Math.abs(change), 0)}%`),
+        el("span", "", `จาก ${num(base, 2)} เป็น ${num(dish.cost_now, 2)} บาทต่อจาน`),
+      );
+    }
+
+    // แท่งเทียบ: 10 ปีก่อน → 5 ปีก่อน → ปีก่อน → วันนี้ → AI ทาย (สูงตามราคา)
     const steps = [
-      ["10 ปีก่อน", dish.cost_10y_ago, "past"], ["5 ปีก่อน", dish.cost_5y_ago, "past"], ["ปีก่อน", dish.cost_1y_ago, "past"],
+      ["10 ปีก่อน", dish.cost_10y_ago, ""], ["5 ปีก่อน", dish.cost_5y_ago, ""], ["ปีก่อน", dish.cost_1y_ago, ""],
       ["วันนี้", dish.cost_now, "now"], [`AI ทาย ${dish.target_period ? thMonth(dish.target_period) : "เดือนหน้า"}`, dish.cost_next, "ai"],
-    ];
+    ].filter(([, v]) => v !== null && v !== undefined);
+    const top = Math.max(...steps.map(([, v]) => v));
+    const box = $("dish-timeline");
+    box.replaceChildren();
     for (const [label, value, kind] of steps) {
-      if (value === null || value === undefined) continue;
-      const step = el("div", `tl-step tl-${kind}`);
-      step.append(el("div", "tl-label", label), el("div", "tl-value", bahtPrice(value)));
-      if (kind === "past") step.appendChild(el("div", "tl-diff", `วันนี้${moveText((dish.cost_now / value - 1) * 100, 0)}`));
-      if (kind === "ai") step.appendChild(el("div", "tl-diff", moveText((value / dish.cost_now - 1) * 100, 1)));
-      timeline.appendChild(step);
+      const step = el("div", `step ${kind}`.trim());
+      const bar = el("div", "step-bar");
+      bar.style.height = `calc((100% - 72px) * ${(value / top).toFixed(3)})`;
+      step.append(el("span", "step-value", num(value, 2)), bar, el("span", "step-label", label));
+      box.appendChild(step);
     }
-    const base = dish.cost_5y_ago || dish.cost_1y_ago;
-    $("dish-sub").textContent = base
-      ? `วัตถุดิบ${dish.name} 1 จาน วันนี้ ${bahtPrice(dish.cost_now)} · เทียบ${dish.cost_5y_ago ? " 5 ปีก่อน" : "ปีก่อน"}${moveText((dish.cost_now / base - 1) * 100, 0)} (${dish.cost_now >= base ? "+" : ""}${num(dish.cost_now - base, 2)} บาทต่อจาน)`
-      : `วัตถุดิบ${dish.name} 1 จาน วันนี้ ${bahtPrice(dish.cost_now)}`;
-
-    const points = dish.series.map((row) => [parseDate(row.period_date), row.cost]);
-    const series = [{ name: "ต้นทุนวัตถุดิบต่อจาน (เฉลี่ยรายเดือน)", color: cssVar("--series-1"), area: true, endLabel: false, points }];
-    if (dish.cost_next && points.length) {
-      series.push({ name: "ที่ AI ทาย", color: cssVar("--forecast"), dashed: true, endLabel: false, points: [points[points.length - 2] || points[points.length - 1], [parseDate(dish.target_period), dish.cost_next]] });
-    }
-    line($("chart-dish"), { series, forceLegend: true, ariaLabel: "ต้นทุนวัตถุดิบต่อจานย้อนหลัง", yFormat: (v, isAxis) => (isAxis ? num(v, 0) : bahtPrice(v)) });
   }
 
   // ---------- หน้า 2: จังหวัดไหนแพงเร็ว ----------
+  // เรื่องที่คนทั่วไปสนใจ (ข้อมูลครบทุกจังหวัด) แทนรายการหมวดทั้งหมดหลายสิบหมวด
+  const MAP_TOPICS = [
+    ["00000", "รวมทุกอย่าง"], ["10000", "อาหาร"], ["11000", "ของสดทำกินเอง"], ["12000", "อาหารซื้อกิน"],
+    ["32000", "ค่าไฟ น้ำ แก๊ส"], ["52000", "รถและน้ำมันรถ"], ["31000", "ค่าเช่าบ้าน"], ["62000", "การศึกษา"],
+  ];
   let mapHandle = null;
   let mapSelected = null;
   async function renderMapPage() {
@@ -443,7 +577,9 @@
     ]);
     const select = $("map-commodity");
     if (!select.options.length) {
-      fillSelect(select, commodityOptions(commodities), "00000");
+      const available = new Set(commodities.map((c) => c.commodity_code));
+      fillSelect(select, MAP_TOPICS.filter(([code]) => available.has(code)).map(([value, label]) => ({ value, label })), "00000");
+      chipSelect(select);
       select.addEventListener("change", () => drawMap(geo));
     }
     await drawMap(geo);
@@ -487,12 +623,12 @@
     stopTimelapse();
     mapNames = new Map(data.items.map((item) => [item.code, item.name]));
     $("map-month").textContent = thMonth(data.period);
-    $("map-caption").textContent = "กด ▶ เพื่อดูว่าของแพงขึ้นเร็วในจังหวัดไหน แต่ละเดือนย้อนหลัง 5 ปี";
+    $("map-caption").textContent = "";
     $("map-slider").disabled = true;
 
     if (ranked.length) {
       const top = ranked[0], bottom = ranked[ranked.length - 1];
-      $("map-takeaway").textContent = `${topic} (${thMonth(data.period)}): ${top.name}${moveText(top.yoy)} จากปีก่อน เร็วที่สุดใน ${ranked.length} จังหวัด ส่วน${bottom.name}${moveText(bottom.yoy)} · สีแดงเข้ม = แพงขึ้นเร็ว สีฟ้า = ถูกลง`;
+      $("map-takeaway").textContent = `${code === "00000" ? "" : `เรื่อง${topic}: `}${top.name}แพงขึ้นเร็วที่สุด (${pct(top.yoy, 1)} จากปีก่อน)${bottom.yoy >= 0 ? ` ส่วน${bottom.name}ขึ้นช้าที่สุด (${pct(bottom.yoy, 1)})` : ` ส่วน${bottom.name}${moveText(bottom.yoy, 1)}`}`;
     }
   }
 
@@ -575,24 +711,24 @@
 
   // ---------- แถบ AI บนหน้าแรก ----------
   function renderAiBanner(fc, products) {
-    const banner = $("ai-banner");
-    banner.replaceChildren();
-    if (!fc) { banner.hidden = true; return; }
-    const body = el("div", "ai-body");
-    body.append(
-      el("div", "ai-label", `AI คาดว่าเดือน ${thMonth(fc.target_period)}`),
-      el("div", "ai-value", `ของโดยรวมจะ${moveText(fc.predicted_change_pct)}`),
-    );
-    const chips = el("div", "ai-chips");
-    for (const id of ["P11028", "P11003", "F52002"]) {
+    const card = $("ai-banner");
+    card.replaceChildren();
+    if (!fc) { card.hidden = true; return; }
+    const value = el("div", "ai-value", `ของโดยรวมจะ${fc.predicted_change_pct >= 0 ? "แพงขึ้นอีก" : "ถูกลง"} `);
+    value.appendChild(el("b", "", `${num(Math.abs(fc.predicted_change_pct), 2)}%`));
+    const rows = el("div", "ai-rows");
+    for (const [id, name] of [["P11028", "ไข่ไก่ เบอร์ 3"], ["P11003", "หมูสะโพก"], ["F52002", "แก๊สโซฮอล์ 95"]]) {
       const product = products.find((p) => p.product_id === id);
       if (!product || !product.next_month_price) continue;
-      const chip = el("span", "ai-chip");
-      chip.append(document.createTextNode(`${product.label} ≈ `), el("b", "", bahtPrice(product.next_month_price)), document.createTextNode(perUnit(product.unit)));
-      chips.appendChild(chip);
+      const row = el("div", "ai-row");
+      const price = el("b", "", `≈ ${num(product.next_month_price, 2)}`);
+      price.appendChild(el("small", "", `฿${perUnit(product.unit)}`));
+      row.append(el("span", "", name), price);
+      rows.appendChild(row);
     }
-    body.appendChild(chips);
-    banner.append(plate("sparkle"), body, el("span", "ai-cta", "ดูที่ AI ทาย →"));
+    const link = withIcon(el("a", "ai-link", "ดูว่า AI ทายแม่นแค่ไหน"), "arrow");
+    link.href = "#forecast";
+    card.append(withIcon(el("div", "ai-label", `AI ทายเดือน ${thMonth(fc.target_period)}`), "sparkle"), value, rows, link);
   }
 
   // ---------- หน้า 3: เดือนหน้าเป็นไง (เฉพาะหมวดที่มีราคาจริงเป็นบาท) ----------
@@ -623,6 +759,7 @@
         fillProductSelect(products);
         drawForecastProduct();
       });
+      picker($("fc-product"), { searchPlaceholder: "ค้นหาสินค้า" });
       $("fc-product").addEventListener("change", () => { fcProductId = $("fc-product").value; drawForecastProduct(); });
       $("fc-live").addEventListener("click", predictLive);
     }
@@ -644,8 +781,8 @@
       const product = data.product;
       fcCurrent = product;
       $("fc-title").textContent = `${product.label} (${product.unit})`;
-      const color = cssVar("--series-1");
-      const series = [{ name: "ราคาจริง (เฉลี่ยรายเดือน)", color, area: true, endLabel: false, points: data.monthly.map((m) => [parseDate(m.period_date), m.avg_price]) }];
+      const color = cssVar("--actual");
+      const series = [{ name: "ราคาจริงเฉลี่ยรายเดือน", color, area: true, areaOpacity: 0.1, endLabel: false, points: data.monthly.filter((m) => !product.target_period || m.period_date < product.target_period).slice(-24).map((m) => [parseDate(m.period_date), m.avg_price]) }];
       if (product.next_month_price) {
         series.push({ name: "ที่ AI ทาย", color: cssVar("--forecast"), dashed: true, endLabel: false, points: [[parseDate(product.base_period), product.base_month_price], [parseDate(product.target_period), product.next_month_price]] });
       }
@@ -663,13 +800,15 @@
     badge.replaceChildren();
     if (change === null || change === undefined || !product.base_month_price) { badge.appendChild(el("div", "muted", "ยังไม่มีค่าที่ AI ทาย")); return; }
     const predicted = product.base_month_price * (1 + change / 100);
-    const big = el("div", "big", `${bahtPrice(predicted)}`);
-    big.appendChild(el("span", "per", perUnit(product.unit)));
-    const move = el("div", "badge-change", `${moveText(change)} จาก ${thMonth(product.base_period)}`);
+    const big = el("div", "badge-big");
+    big.append(el("b", "", num(predicted, predicted >= 1000 ? 0 : 2)), el("span", "", `฿${perUnit(product.unit)}`));
+    const move = el("div", "badge-change", `${change > 0.005 ? "▲" : change < -0.005 ? "▼" : "●"} ${moveText(change)} จาก ${thMonth(product.base_period)} (${bahtPrice(product.base_month_price)})`);
     move.style.color = changeColor(change);
-    badge.append(el("div", "muted", `AI ทายราคาเฉลี่ย ${thMonth(product.target_period)}`), big, move);
+    badge.append(withIcon(el("div", "ai-label", `AI ทายราคาเฉลี่ย ${thMonth(product.target_period)}`), "sparkle"), big, move);
     if (product.target_month_actual) {
-      badge.appendChild(el("div", "muted", `ราคาจริง ${thMonth(product.target_period)} (${product.target_month_days} วันที่สำรวจแล้ว) ≈ ${bahtPrice(product.target_month_actual)}`));
+      const actual = el("div", "badge-actual", `ราคาจริง ${thMonth(product.target_period)} ถึงตอนนี้ (${product.target_month_days} วันที่สำรวจ) ≈ `);
+      actual.appendChild(el("b", "", bahtPrice(product.target_month_actual)));
+      badge.appendChild(actual);
     }
     badge.appendChild(el("div", "muted", note));
   }
@@ -704,7 +843,7 @@
       return;
     }
     const rows = data.backtest;
-    $("fc-bt-sub").textContent = `AI เรียนจากข้อมูลถึง ${thMonth(s.trained_through)} แล้วทายทีละเดือน ${s.months} เดือนหลังจากนั้น (${thMonth(rows[0].target_period)} – ${thMonth(rows[rows.length - 1].target_period)}) ซึ่ง AI ไม่เคยเห็นมาก่อน · AI ทาย % ของหมวด "${categoryName(data.product.cpi_code)}" แล้วคูณกับราคาเดือนก่อนของสินค้านี้`;
+    $("fc-bt-sub").textContent = `AI เรียนข้อมูลถึง ${thMonth(s.trained_through)} แล้วทาย ${s.months} เดือนถัดมาที่ไม่เคยเห็น`;
     const better = s.naive_error_pct - s.ai_error_pct;
     tile(tiles, { label: "ทายราคาพลาดเฉลี่ย", value: `±${num(s.ai_error_pct, 1)}%`, sub: `ต่อเดือน · ${data.product.label}`, icon: "target", tone: "purple" });
     tile(tiles, {
@@ -719,7 +858,7 @@
       forceLegend: true, endLabels: false, ariaLabel: "AI ทายไว้เทียบกับราคาจริง",
       yFormat: (v, isAxis) => (isAxis ? num(v, Math.abs(v) < 10 ? 2 : v < 100 ? 1 : 0) : bahtPrice(v)),
       series: [
-        { name: "ราคาจริง", color: cssVar("--series-1"), points: rows.map((r) => [parseDate(r.target_period), r.actual_price]) },
+        { name: "ราคาจริง", color: cssVar("--actual"), points: rows.map((r) => [parseDate(r.target_period), r.actual_price]) },
         { name: "AI ทายไว้ล่วงหน้า 1 เดือน", color: cssVar("--forecast"), dashed: true, points: rows.map((r) => [parseDate(r.target_period), r.predicted_price]) },
       ],
     });
@@ -727,13 +866,15 @@
 
   function productRow(container, product) {
     const look = productLook(product.label);
-    const row = el("button", `pf-row tone-${look.tone}`);
+    const row = el("button", "pf-row");
     row.type = "button";
     const name = el("div", "pf-name");
     name.append(el("b", "", product.label), el("span", "muted", `${categoryName(product.cpi_code)} · ${product.unit}`));
-    const next = el("div", "pf-next", bahtPrice(product.next_month_price));
+    const next = el("div", "pf-next", num(product.next_month_price, 2));
     next.style.color = changeColor(product.predicted_change_pct);
-    row.append(plate(look.icon), name, el("div", "pf-now", bahtPrice(product.base_month_price)), el("div", "pf-arrow", "→"), next, el("div", "pf-chg", pct(product.predicted_change_pct)));
+    const chg = el("div", "pf-chg");
+    chg.appendChild(deltaNode(product.predicted_change_pct, "%"));
+    row.append(plate(look.icon), name, el("div", "pf-now", num(product.base_month_price, 2)), el("div", "pf-arrow", "→"), next, chg);
     row.addEventListener("click", () => {
       fcCategory = product.cpi_code;
       fcProductId = product.product_id;
@@ -754,17 +895,16 @@
       }
       const sample = data.rising[0] || data.falling[0];
       if (sample) {
-        const text = `ราคาเฉลี่ย ${thMonth(sample.base_period)} → ที่ AI ทายสำหรับ ${thMonth(sample.target_period)} · กดเพื่อดูกราฟ`;
+        const text = `${thMonth(sample.base_period)} → ${thMonth(sample.target_period)}`;
         $("fc-rising-sub").textContent = text;
         $("fc-falling-sub").textContent = text;
       }
       const fc = summary.forecast["00000"];
+      const up = data.rising[0];
       const parts = [];
-      if (fc) parts.push(`AI คาดว่าเดือน ${thMonth(fc.target_period)} ของโดยรวมจะ${moveText(fc.predicted_change_pct)} จากเดือนก่อน`);
-      const up = data.rising[0], down = data.falling[0];
-      if (up) parts.push(`ของที่น่าจะแพงขึ้น เช่น ${up.label} ≈ ${bahtPrice(up.next_month_price)}${perUnit(up.unit)} (${pct(up.predicted_change_pct, 1)})`);
-      if (down) parts.push(`ที่น่าจะถูกลง เช่น ${down.label} ≈ ${bahtPrice(down.next_month_price)}${perUnit(down.unit)} (${pct(down.predicted_change_pct, 1)})`);
-      $("fc-takeaway").textContent = parts.join(" · ");
+      if (fc) parts.push(`AI คาดว่าเดือน ${thMonth(fc.target_period)} ของโดยรวมจะ${moveText(fc.predicted_change_pct)}`);
+      if (up) parts.push(`${fc ? " ตัวที่" : "ตัวที่"}น่าจะขึ้นแรงสุดคือ${up.label} (${pct(up.predicted_change_pct, 1)})`);
+      $("fc-takeaway").textContent = parts.join("");
     } catch (error) { showError($("fc-rising"), error); }
   }
 
@@ -774,7 +914,7 @@
       const champion = championOf(await metricsP());
       if (!champion) return;
       const gain = (1 - champion.rmse / champion.baseline_rmse) * 100;
-      $("fc-accuracy").textContent = `ควรรู้: AI ตัวนี้ใช้ดูแนวโน้มว่าราคาน่าจะขึ้นหรือลง ไม่ได้ทายราคาได้เป๊ะ · ทดสอบกับทุกหมวดทุกพื้นที่ช่วง 12 เดือนที่ไม่เคยเห็น ทายพลาดเฉลี่ยประมาณ ±${num(champion.mae, 1)}% ต่อเดือน ทายทิศทางถูก ${num(champion.direction_accuracy * 100, 0)}% และแม่นกว่าการเดาว่า "ราคาเท่าเดิม" ${num(gain, 0)}% · ราคาจริงมาจากตลาดและปั๊มในกรุงเทพฯ · รายละเอียดทางเทคนิคอยู่ในหน้าเบื้องหลังระบบ`;
+      $("fc-accuracy").textContent = `ควรรู้: AI ใช้ดูแนวโน้มว่าจะขึ้นหรือลง ไม่ได้ทายเป๊ะ · ทดสอบทุกหมวดพลาดเฉลี่ย ±${num(champion.mae, 1)}% ต่อเดือน ทายทิศทางถูก ${num(champion.direction_accuracy * 100, 0)}% แม่นกว่าเดาว่า "ราคาเท่าเดิม" ${num(gain, 0)}%`;
     } catch (error) { $("fc-accuracy").textContent = ""; }
   }
 
@@ -785,17 +925,28 @@
     if (!select.options.length) {
       const sorted = [...provinces].sort((a, b) => a.province_name.localeCompare(b.province_name, "th"));
       fillSelect(select, sorted.map((p) => ({ value: p.province_code, label: p.province_name })), "10");
+      picker(select, { searchPlaceholder: "ค้นหาจังหวัด" });
       select.addEventListener("change", drawWage);
     }
     await drawWage();
     const first = provinces[0];
-    $("wage-table-sub").textContent = first
-      ? `ค่าแรงเดือนล่าสุด (${thMonth(first.last_period)}) · "ซื้อของได้" เทียบกับเดือนแรกที่มีข้อมูล (${thMonth(first.first_period)}) บวก = ค่าแรงขึ้นเร็วกว่าของแพง · กดแถวเพื่อดูจังหวัดนั้น`
-      : "";
+    $("wage-table-sub").textContent = first ? `ซื้อของได้มากขึ้น/น้อยลง เทียบกับ ${thMonth(first.first_period)} · กดแถวเพื่อดูจังหวัดนั้น` : "";
+    drawWageTable(provinces);
+  }
+
+  // ตารางค่าแรงแสดง 10 จังหวัดแรกก่อน กดปุ่มเพื่อดูครบทุกจังหวัด
+  const WAGE_ROWS = 10;
+  let wageShowAll = false;
+  function drawWageTable(provinces) {
+    const select = $("wage-province");
     tableRows($("wage-table"), [
       { label: "จังหวัด" }, { label: "ค่าแรงวันละ", num: true }, { label: "หักของแพงแล้วเหลือ (เงินปี 2566)", num: true }, { label: "ซื้อของได้มากขึ้น/น้อยลง", num: true },
-    ], provinces.map((p) => ({ code: p.province_code, cells: [p.province_name, `${num(p.nominal_wage, 0)} ฿`, `${num(p.real_wage, 0)} ฿`, deltaNode(p.real_change_pct, "%", false)] })),
+    ], (wageShowAll ? provinces : provinces.slice(0, WAGE_ROWS)).map((p) => ({ code: p.province_code, cells: [p.province_name, `${num(p.nominal_wage, 0)} ฿`, `${num(p.real_wage, 0)} ฿`, deltaNode(p.real_change_pct, "%", false)] })),
     (row) => { select.value = row.code; drawWage(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+    const more = $("wage-more");
+    more.hidden = wageShowAll || provinces.length <= WAGE_ROWS;
+    more.textContent = `ดูทุกจังหวัด (${provinces.length})`;
+    more.onclick = () => { wageShowAll = true; drawWageTable(provinces); };
   }
 
   // ราคาต่อหน่วยจากหน่วยของกรมการค้าภายใน เช่น "บาท/15กก." -> ราคาต่อ 1 กก.
@@ -836,9 +987,9 @@
       item.append(plate(look.icon), body);
       list.appendChild(item);
     }
-    $("buy-sub").textContent = `ค่าแรงวันละ ${num(last.nominal_wage, 0)} บาท ซื้อได้อย่างใดอย่างหนึ่ง · ราคาจริงตลาดกรุงเทพฯ ${egg ? thDay(egg.price_date) : ""}${code === "10" ? "" : " (จังหวัดอื่นราคาอาจต่างจากนี้)"}`;
+    $("buy-sub").textContent = `ซื้อได้อย่างใดอย่างหนึ่ง · ราคาตลาดกรุงเทพฯ${code === "10" ? "" : " (จังหวัดอื่นอาจต่างจากนี้)"}`;
 
-    $("wage-takeaway").textContent = `ค่าแรงขั้นต่ำ${data.province_name}ตอนนี้วันละ ${num(last.nominal_wage, 0)} บาท เมื่อหักผลของของแพงแล้ว ซื้อของได้${power >= 0 ? "มากขึ้น" : "น้อยลง"}กว่าเมื่อ ${thMonth(first.period_date)} ${num(Math.abs(power), 1)}% (${power >= 0 ? "ค่าแรงขึ้นเร็วกว่าของแพง" : "ของแพงขึ้นเร็วกว่าค่าแรง"})${eggs ? ` · ค่าแรง 1 วันซื้อไข่ได้ ${num(eggs, 0)} ฟอง` : ""}`;
+    $("wage-takeaway").textContent = `ค่าแรงขั้นต่ำ${data.province_name}วันละ ${num(last.nominal_wage, 0)} บาท ซื้อของได้${power >= 0 ? "มากขึ้น" : "น้อยลง"} ${num(Math.abs(power), 1)}% เทียบกับ ${thMonth(first.period_date)}`;
 
     line($("chart-wage"), {
       yFormat: (v) => num(v, 0), ariaLabel: "ค่าแรงขั้นต่ำและค่าแรงเมื่อหักของแพงแล้ว",
@@ -897,6 +1048,7 @@
   async function renderDataPage() {
     const [pipelineInfo, summary] = await Promise.all([once("pipeline", () => api("/api/pipeline")), summaryP()]);
     renderFlow(pipelineInfo.tables);
+    renderLongrun();
     const tiles = $("data-tiles");
     tiles.replaceChildren();
     const v = summary.volume;
@@ -928,7 +1080,7 @@
     if (page !== "prices") window.scrollTo({ top: 0 });
     try {
       await PAGES[name]();
-      if (page === "prices") $("price-detail").scrollIntoView({ block: "start" });
+      if (page === "prices") await showPriceDetail();
     } catch (error) { console.error(error); showError($(`page-${name}`).querySelector(".card") || $(`page-${name}`), error); }
   }
   $("range-chips").addEventListener("click", (event) => {
@@ -942,8 +1094,7 @@
   window.addEventListener("hashchange", route);
   summaryP().then((s) => {
     if (location.hash && location.hash !== "#overview") {
-      const v = s.volume;
-      $("freshness").textContent = `ข้อมูลถึง ${thMonth(s.latest_period)} · ${compact(v.cpi_rows)} แถว`;
+      $("freshness").textContent = `ข้อมูลถึง ${thMonth(s.latest_period)}`;
     }
   }).catch(() => {});
   route();

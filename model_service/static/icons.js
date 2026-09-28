@@ -33,6 +33,10 @@
     book: '<path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h14"/>',
     arrowUp: '<path d="M7 17L17 7"/><path d="M8 7h9v9"/>',
     arrowDown: '<path d="M7 7l10 10"/><path d="M17 8v9H8"/>',
+    arrow: '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+    chevron: '<path d="M6 9l6 6 6-6"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
   };
 
   const cacheUrl = {};
