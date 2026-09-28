@@ -180,7 +180,7 @@
 
     const render = () => {
       const query = search.value.trim();
-      const options = [...select.options].filter((o) => !query || o.textContent.includes(query));
+      const options = [...select.options].filter((o) => o.value !== "" && (!query || o.textContent.includes(query)));
       list.replaceChildren(...options.map((option) => {
         const on = option.value === select.value;
         const item = el("button", `picker-option${on ? " selected" : ""}`, option.textContent.trim());
@@ -322,6 +322,36 @@
     return { icon: "leaf", tone: "green" };
   }
 
+  // รูปสินค้าจริงจาก Wikimedia Commons (เครดิตใน static/products/credits.html) จับชนิดจากชื่อสินค้า ตัวแรกที่ตรงชนะ
+  // สินค้าต่างเกรด/ต่างร้านใช้รูปเดียวกัน · เป็ดทั้งตัวกับผักกะเฉดไม่มีรูปถ่ายที่ใช้ได้ จึงเป็นภาพวาด SVG ที่ทำขึ้นเอง
+  const PRODUCT_PHOTOS = [
+    ["fuel", /ดีเซล|แก๊สโซฮอล์/], ["salted-egg", /ไข่เป็ดเค็ม/], ["duck-egg", /ไข่เป็ด/], ["egg", /ไข่ไก่/],
+    ["pork-belly", /หมูสามชั้น/], ["pork", /สุกร|หมู/], ["beef", /เนื้อโค/], ["chicken-feet", /แข้ง ขา ตีน/],
+    ["chicken-wing", /ไก่.*ปีก/], ["chicken-leg", /ไก่.*(น่อง|สะโพก)/], ["chicken-breast", /อกไก่|ไก่.*(เนื้ออก|สันใน)/], ["chicken", /ไก่/], ["duck", /เป็ดสด/, "svg"],
+    ["giant-prawn", /กุ้งก้ามกราม/], ["shrimp", /กุ้ง/], ["seabass", /ปลากระพง/], ["snakehead", /ปลาช่อน/], ["catfish", /ปลาดุก/],
+    ["tilapia", /ปลานิล|ปลาทับทิม/], ["mackerel", /ปลาทู/], ["pangasius", /ปลาสวาย/], ["cuttlefish", /หมึกกระดอง/], ["squid", /หมึก/],
+    ["clam", /หอยลาย/], ["cockle", /หอยแครง/], ["mussel", /หอยแมลงภู่/], ["krachai", /กระชาย/], ["cauliflower", /กะหล่ำดอก/],
+    ["cabbage", /กะหล่ำปลี/], ["ginger", /ขิง/], ["celery", /ขึ้นฉ่าย/], ["baby-corn", /ข้าวโพดฝักอ่อน/], ["scallion", /ต้นหอม/],
+    ["long-bean", /ถั่วฝักยาว/], ["choy-sum", /กวางตุ้ง/], ["water-mimosa", /กะเฉด/, "svg"], ["napa", /ผักกาดขาว/], ["lettuce", /ผักกาดหอม/], ["kale", /คะน้า/],
+    ["coriander", /ผักชี/], ["water-spinach", /ผักบุ้ง/], ["dried-chili", /พริกแห้ง/], ["pepper", /พริกไทย/], ["chili", /พริก/],
+    ["wax-gourd", /ฟักเขียว/], ["lime", /มะนาว/], ["bitter-melon", /มะระ/], ["papaya", /มะละกอ/], ["eggplant", /มะเขือเจ้าพระยา|มะเขือยาว/],
+    ["tomato", /มะเขือเทศ/], ["asparagus", /หน่อไม้ฝรั่ง/], ["radish", /หัวผักกาด/], ["cucumber", /แตงกวา/], ["banana", /กล้วย/],
+    ["durian", /ทุเรียน/], ["guava", /^ฝรั่ง/], ["mango", /มะม่วง/], ["mangosteen", /มังคุด/], ["longkong", /ลองกอง/], ["longan", /ลำไย/],
+    ["lychee", /ลิ้นจี่/], ["pineapple", /สับปะรด/], ["tangerine", /ส้มเขียวหวาน/], ["pomelo", /ส้มโอ/], ["rambutan", /เงาะ/],
+    ["watermelon", /แตงโม/], ["roselle", /กระเจี๊ยบ/], ["garlic", /กระเทียม/], ["tamarind", /มะขาม/], ["potato", /มันฝรั่ง/],
+    ["jobs-tears", /ลูกเดือย/], ["onion", /หอมหัวใหญ่/], ["shallot", /หอมแดง/], ["sesame", /^งา/], ["cooking-oil", /น้ำมัน/],
+    ["peanut", /ถั่วลิสง/], ["grated-coconut", /มะพร้าวขาวขูด/], ["coconut", /มะพร้าว/], ["sticky-rice", /ข้าวสารเหนียว/], ["rice", /ข้าวสาร|ข้าวหอม/],
+  ];
+  const productPhoto = (label) => {
+    const hit = PRODUCT_PHOTOS.find(([, pattern]) => pattern.test(label));
+    return hit ? `/static/products/${hit[0]}.${hit[2] || "jpg"}` : null;
+  };
+  const photoImg = (src, className) => {
+    const img = el("img", className);
+    img.src = src; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+    return img;
+  };
+
   function priceCard(container, product) {
     const look = productLook(product.label);
     const card = el("button", "price-card");
@@ -341,7 +371,17 @@
       selectedProduct = product;
       showPriceDetail();
     });
-    container.appendChild(card);
+    const item = el("div", "price-item");
+    const add = el("button", "add-basket");
+    add.type = "button";
+    add.dataset.product = product.product_id;
+    add.addEventListener("click", () => {
+      if (inBasket(product.product_id)) { location.hash = "basket"; return; }
+      addToBasket(product);
+    });
+    item.append(card, add);
+    container.appendChild(item);
+    syncAddButtons();
     // เส้นเล็ก 12 เดือน: สีตามทิศทางจากปีก่อน (ส้ม = แพงขึ้น, น้ำเงิน = ถูกลง)
     const sparkColor = yoy === null || Math.abs(yoy) < 0.05 ? cssVar("--muted") : yoy > 0 ? cssVar("--up") : cssVar("--down");
     if (product.spark && product.spark.length > 1) sparkline(spark, product.spark.slice(-12), { height: 44, color: sparkColor });
@@ -621,7 +661,10 @@
   // เรื่องที่คนทั่วไปสนใจ (ข้อมูลครบทุกจังหวัด) แทนรายการหมวดทั้งหมดหลายสิบหมวด
   const MAP_TOPICS = [
     ["00000", "รวมทุกอย่าง"], ["10000", "อาหาร"], ["11000", "ของสดทำกินเอง"], ["12000", "อาหารซื้อกิน"],
-    ["32000", "ค่าไฟ น้ำ แก๊ส"], ["52000", "รถและน้ำมันรถ"], ["31000", "ค่าเช่าบ้าน"], ["62000", "การศึกษา"],
+    ["32000", "ค่าไฟ น้ำ แก๊ส"], ["52000", "รถและน้ำมันรถ"],
+    // 54100 = ค่าบริการการสื่อสาร (ค่ามือถือและเน็ตรวมกัน ไม่รวมตัวเครื่อง) · 41000 = ค่ายาและค่ารักษาพยาบาล
+    ["54100", "ค่ามือถือและเน็ต"], ["41000", "ค่ายาและค่ารักษา"],
+    ["31000", "ค่าเช่าบ้าน"], ["62000", "การศึกษา"],
   ];
   let mapHandle = null;
   let mapSelected = null;
@@ -1015,10 +1058,13 @@
   }
 
   // ราคาต่อหน่วยจากหน่วยของกรมการค้าภายใน เช่น "บาท/15กก." -> ราคาต่อ 1 กก.
-  function unitPrice(product) {
+  function unitOf(product) {
     const match = /\/\s*(\d+(?:\.\d+)?)?\s*(.+)$/.exec(product.unit || "");
-    const size = match && match[1] ? Number(match[1]) : 1;
-    return { price: product.latest_price / size, unit: match ? match[2].trim() : "" };
+    return { size: match && match[1] ? Number(match[1]) : 1, unit: match ? match[2].trim() : "" };
+  }
+  function unitPrice(product) {
+    const { size, unit } = unitOf(product);
+    return { price: product.latest_price / size, unit };
   }
 
   async function drawWage() {
@@ -1065,7 +1111,341 @@
     });
   }
 
-  // ---------- หน้า 5: เบื้องหลังระบบ ----------
+  // ---------- หน้า 5: ตะกร้าของฉัน (หน้าร้านแบบแพลตฟอร์มช้อปปิ้ง ใช้ราคาจริง) ----------
+  // ตะกร้าเก็บใน localStorage ของเบราว์เซอร์นี้ (ไม่ส่งขึ้นเซิร์ฟเวอร์) จำนวนเป็นหน่วยย่อย เช่น ข้าว 15 กก./ถุง -> ใส่เป็น กก.
+  const BASKET_KEY = "col-basket-v1";
+  const DEFAULT_BASKET = [
+    { id: "P11028", qty: 30 }, { id: "P11003", qty: 1 }, { id: "R13001", qty: 5 },
+    { id: "P13001", qty: 1 }, { id: "P16011", qty: 1 }, { id: "F52002", qty: 40 },
+  ];
+  function loadBasket() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(BASKET_KEY) || "null");
+      if (Array.isArray(saved)) return saved.filter((i) => /^[A-Z]\d{5}$/.test(i?.id) && Number.isFinite(i.qty) && i.qty > 0);
+    } catch (error) { /* เบราว์เซอร์ปิดการเก็บข้อมูล ใช้ตะกร้าตัวอย่างแทน */ }
+    return null;
+  }
+  let basket = loadBasket() ?? DEFAULT_BASKET.map((i) => ({ ...i }));
+  let basketProducts = new Map();
+  let basketHistory = null; // { key, data }
+  let basketChartDrawn = false;
+  const shop = { query: "", group: "", sort: "staple", limit: 24, cards: new Map() };
+  const SHOP_PAGE = 24;
+  const inBasket = (id) => basket.some((i) => i.id === id);
+  const basketItem = (id) => basket.find((i) => i.id === id);
+  const wholeBaht = (v) => `${num(v, 0)} บาท`;
+  // จำนวนเริ่มต้นและขั้นของปุ่ม +/- ตามหน่วย
+  const qtyStep = (unit) => (/กก/.test(unit) ? 0.5 : 1);
+  const defaultQty = (unit) => (/ฟอง/.test(unit) ? 10 : /ลิตร/.test(unit) ? 10 : 1);
+  const fmtQty = (q) => num(q, Number.isInteger(q) ? 0 : 1);
+
+  function saveBasket() {
+    try { localStorage.setItem(BASKET_KEY, JSON.stringify(basket)); } catch (error) { /* ใช้ได้ต่อโดยไม่จำ */ }
+    const count = $("basket-count");
+    count.textContent = String(basket.length);
+    count.hidden = !basket.length;
+    syncAddButtons();
+  }
+  function syncAddButtons() {
+    document.querySelectorAll(".add-basket").forEach((button) => {
+      const added = inBasket(button.dataset.product);
+      button.classList.toggle("added", added);
+      button.textContent = added ? "✓ ในตะกร้า" : "+ ตะกร้า";
+      button.setAttribute("aria-label", added ? "อยู่ในตะกร้าแล้ว ไปที่ตะกร้า" : "ใส่ตะกร้า");
+    });
+  }
+  // ทุกการเปลี่ยนแปลงของตะกร้าผ่านฟังก์ชันนี้: บันทึก แล้ววาดการ์ดสินค้าตัวนั้นกับตะกร้าใหม่
+  function setBasketQty(id, qty) {
+    const value = Math.max(0, Math.round(qty * 100) / 100);
+    const item = basketItem(id);
+    if (value <= 0) basket = basket.filter((i) => i.id !== id);
+    else if (item) item.qty = value;
+    else basket.push({ id, qty: value });
+    saveBasket();
+    shop.cards.get(id)?._refresh();
+    if (!$("page-basket").hidden) drawCart();
+  }
+  function addToBasket(product) {
+    if (!inBasket(product.product_id)) setBasketQty(product.product_id, defaultQty(unitOf(product).unit));
+  }
+
+  // ยอดรวม: วันนี้, ปีก่อน, เฉลี่ยเดือนฐาน และที่ AI ทาย (สินค้าที่ไม่มีข้อมูลบางช่องใช้ราคาปัจจุบันแทน และนับไว้บอกผู้ใช้)
+  function basketTotals() {
+    const totals = { now: 0, yearAgo: 0, base: 0, next: 0, missingYear: 0, missingAi: 0, target: null, basePeriod: null, latest: "" };
+    for (const item of basket) {
+      const p = basketProducts.get(item.id);
+      if (!p) continue;
+      const k = item.qty / unitOf(p).size;
+      totals.now += k * p.latest_price;
+      totals.yearAgo += k * (p.price_1y_ago ?? p.latest_price);
+      if (p.price_1y_ago == null) totals.missingYear += 1;
+      const base = p.base_month_price ?? p.latest_price;
+      totals.base += k * base;
+      totals.next += k * (p.next_month_price ?? base);
+      if (p.next_month_price == null) totals.missingAi += 1;
+      totals.target ??= p.target_period;
+      totals.basePeriod ??= p.base_period;
+      if (p.price_date > totals.latest) totals.latest = p.price_date;
+    }
+    return totals;
+  }
+
+  // ปุ่ม − จำนวน + ใช้ทั้งในการ์ดสินค้าและในตะกร้า
+  function stepper(product, item, { compact = false } = {}) {
+    const { unit } = unitOf(product);
+    const box = el("div", compact ? "stepper stepper-sm" : "stepper");
+    const minus = el("button", "", "−");
+    const plus = el("button", "", "+");
+    const input = el("input");
+    minus.type = plus.type = "button";
+    input.type = "number"; input.min = "0"; input.step = String(qtyStep(unit)); input.inputMode = "decimal";
+    input.value = String(item.qty);
+    input.setAttribute("aria-label", `จำนวน${product.label} (${unit})`);
+    minus.setAttribute("aria-label", `ลด${product.label}`);
+    plus.setAttribute("aria-label", `เพิ่ม${product.label}`);
+    minus.addEventListener("click", () => setBasketQty(product.product_id, item.qty - qtyStep(unit)));
+    plus.addEventListener("click", () => setBasketQty(product.product_id, item.qty + qtyStep(unit)));
+    input.addEventListener("change", () => setBasketQty(product.product_id, Number(input.value) || 0));
+    box.append(minus, input, el("span", "stepper-unit", unit), plus);
+    return box;
+  }
+
+  // การ์ดสินค้าแบบร้านค้าออนไลน์: รูป (ไอคอน), ชื่อ, ราคาวันนี้, ราคาปีก่อนขีดฆ่า + ป้าย %, ปุ่มใส่ตะกร้า
+  function shopCard(p) {
+    const look = productLook(p.label);
+    const card = el("article", "shop-card");
+    const thumb = withIcon(el("div", "shop-thumb"), look.icon);
+    const photo = productPhoto(p.label);
+    if (photo) { thumb.classList.add("has-photo"); thumb.appendChild(photoImg(photo, "shop-photo")); }
+    if (STAPLES.includes(p.product_id) || p.product_id === "F52002") thumb.appendChild(el("span", "shop-tag", "ของใช้ประจำ"));
+    if (p.predicted_change_pct != null) {
+      const ai = el("span", "shop-ai", `AI เดือนหน้า ${p.predicted_change_pct > 0.005 ? "▲" : p.predicted_change_pct < -0.005 ? "▼" : "●"} ${num(Math.abs(p.predicted_change_pct), 1)}%`);
+      thumb.appendChild(ai);
+    }
+    const body = el("div", "shop-body");
+    const name = el("h3", "shop-name", p.label);
+    name.title = p.label;
+    const price = el("div", "shop-price");
+    price.append(el("b", "", num(p.latest_price, p.latest_price >= 1000 ? 0 : 2)), el("span", "", `฿${perUnit(p.unit)}`));
+    const was = el("div", "shop-was");
+    const yoy = yoyPct(p);
+    if (p.price_1y_ago != null) {
+      const old = el("s", "", `${num(p.price_1y_ago, 2)} ฿`);
+      old.setAttribute("aria-label", `ปีก่อน ${num(p.price_1y_ago, 2)} บาท`);
+      was.append(old, deltaNode(yoy, "%"));
+    } else {
+      was.appendChild(el("span", "muted", "ยังไม่มีราคาปีก่อน"));
+    }
+    const action = el("div", "shop-action");
+    body.append(name, price, was, action);
+    card.append(thumb, body);
+    card._refresh = () => {
+      const item = basketItem(p.product_id);
+      action.replaceChildren();
+      card.classList.toggle("in-cart", !!item);
+      if (item) { action.appendChild(stepper(p, item)); return; }
+      const add = withIcon(el("button", "shop-add", "ใส่ตะกร้า"), "cart");
+      add.type = "button";
+      add.addEventListener("click", () => {
+        addToBasket(p);
+        shop.cards.get(p.product_id)?.querySelector(".stepper button:last-child")?.focus();
+      });
+      action.appendChild(add);
+    };
+    card._refresh();
+    return card;
+  }
+
+  function drawShop() {
+    const q = shop.query.trim();
+    const rank = (p) => { const i = STAPLES.indexOf(p.product_id); return i === -1 ? (p.product_id === "F52002" ? STAPLES.length : STAPLES.length + 1) : i; };
+    const sorters = {
+      staple: (a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label, "th"),
+      up: (a, b) => (yoyPct(b) ?? -1e9) - (yoyPct(a) ?? -1e9),
+      down: (a, b) => (yoyPct(a) ?? 1e9) - (yoyPct(b) ?? 1e9),
+      cheap: (a, b) => a.latest_price / unitOf(a).size - b.latest_price / unitOf(b).size,
+    };
+    const matched = [...basketProducts.values()]
+      .filter((p) => (!shop.group || p.product_group === shop.group) && (!q || p.label.includes(q)))
+      .sort(sorters[shop.sort] || sorters.staple);
+    const grid = $("shop-grid");
+    grid.replaceChildren();
+    shop.cards.clear();
+    if (!matched.length) grid.appendChild(el("div", "empty-state", "ไม่พบสินค้าที่ค้นหา"));
+    for (const p of matched.slice(0, shop.limit)) {
+      const card = shopCard(p);
+      shop.cards.set(p.product_id, card);
+      grid.appendChild(card);
+    }
+    $("shop-count").textContent = `${compact(matched.length)} รายการ${q ? ` ที่ตรงกับ "${q}"` : ""}`;
+    $("shop-more").hidden = matched.length <= shop.limit;
+    $("shop-more").textContent = `ดูสินค้าเพิ่ม (เหลืออีก ${compact(matched.length - shop.limit)} รายการ)`;
+  }
+
+  function drawCart() {
+    const list = $("cart-list");
+    list.replaceChildren();
+    $("cart-count").textContent = `(${basket.length})`;
+    if (!basket.length) list.appendChild(el("div", "empty-state", "ตะกร้าว่าง: กด \"ใส่ตะกร้า\" ที่สินค้า"));
+    for (const item of basket) {
+      const p = basketProducts.get(item.id);
+      if (!p) continue;
+      const { size } = unitOf(p);
+      const row = el("div", "cart-row");
+      const info = el("div", "cart-info");
+      info.append(el("b", "", p.label), el("span", "muted", `${num(p.latest_price / size, 2)} ฿/${unitOf(p).unit}`));
+      const remove = el("button", "remove", "×");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `เอา${p.label}ออกจากตะกร้า`);
+      remove.addEventListener("click", () => setBasketQty(item.id, 0));
+      const photo = productPhoto(p.label);
+      row.append(photo ? photoImg(photo, "cart-thumb") : plate(productLook(p.label).icon), info, remove, stepper(p, item, { compact: true }), el("div", "line-total", bahtPrice((item.qty / size) * p.latest_price)));
+      list.appendChild(row);
+    }
+
+    const t = basketTotals();
+    const diff = t.now - t.yearAgo;
+    const diffPct = t.yearAgo ? (diff / t.yearAgo) * 100 : 0;
+    const totals = $("cart-totals");
+    totals.replaceChildren();
+    if (basket.length) {
+      const line = (label, value, cls = "") => { const row = el("div", `cart-line ${cls}`.trim()); row.append(el("span", "", label), value); return row; };
+      const was = el("s", "", wholeBaht(t.yearAgo));
+      totals.append(
+        line("ถ้าซื้อเมื่อปีก่อน", was, "muted-line"),
+        line(`ราคาวันนี้ (${basket.length} รายการ)`, el("b", "cart-total", wholeBaht(t.now)), "total-line"),
+      );
+      const change = el("div", "cart-change");
+      change.append(deltaNode(diffPct, "% จากปีก่อน"), el("span", "", `${diff >= 0 ? "จ่ายเพิ่ม" : "จ่ายน้อยลง"} ${wholeBaht(Math.abs(diff))}`));
+      const ai = el("div", "cart-ai");
+      ai.append(aiLabel(`AI ทายเฉลี่ยทั้งเดือน ${t.target ? thMonth(t.target) : "หน้า"}`), el("b", "", `≈ ${wholeBaht(t.next)}`));
+      totals.append(change, ai);
+    }
+    $("cart-summary").disabled = !basket.length;
+    $("cart-bar-text").textContent = basket.length ? `${basket.length} รายการ · ${wholeBaht(t.now)}` : "ตะกร้าว่าง";
+    $("basket-takeaway").textContent = basket.length
+      ? `ของ ${basket.length} อย่างในตะกร้า วันนี้ ${wholeBaht(t.now)} ${diff >= 0 ? "แพงขึ้น" : "ถูกลง"} ${wholeBaht(Math.abs(diff))} จากปีก่อน (${pct(diffPct, 1)})`
+      : "เลือกของที่ซื้อประจำใส่ตะกร้า แล้วดูว่าแพงขึ้นจากปีก่อนกี่บาท และ AI คาดว่าเดือนหน้าจะจ่ายเท่าไหร่";
+  }
+
+  // ใบสรุปค่าใช้จ่าย (แทนปุ่มชำระเงิน: เว็บนี้ไม่ได้ขายของจริง)
+  function openSummary() {
+    const t = basketTotals();
+    const diff = t.now - t.yearAgo;
+    const body = $("summary-body");
+    body.replaceChildren();
+    const receipt = el("div", "receipt summary-receipt");
+    receipt.append(el("div", "receipt-kicker", `ราคา ณ ${t.latest ? thDay(t.latest) : "วันนี้"}`), el("div", "receipt-rule"));
+    for (const item of basket) {
+      const p = basketProducts.get(item.id);
+      if (!p) continue;
+      const row = el("div", "receipt-row");
+      row.append(el("span", "", `${p.label} × ${fmtQty(item.qty)} ${unitOf(p).unit}`), el("span", "receipt-cost", num((item.qty / unitOf(p).size) * p.latest_price, 2)));
+      receipt.appendChild(row);
+    }
+    const total = el("div", "receipt-row receipt-total");
+    total.append(el("span", "", "รวมวันนี้"), el("span", "receipt-cost", wholeBaht(t.now)));
+    receipt.append(el("div", "receipt-rule"), total);
+    const compare = el("div", "summary-compare");
+    const year = tile(compare, { label: "ถ้าซื้อชุดเดียวกันเมื่อปีก่อน", value: wholeBaht(t.yearAgo), icon: "calendar" });
+    year.append(deltaNode(t.yearAgo ? (diff / t.yearAgo) * 100 : 0, "% จากปีก่อน"), el("div", "sub", `วันนี้${diff >= 0 ? "จ่ายเพิ่ม" : "จ่ายน้อยลง"} ${wholeBaht(Math.abs(diff))}${t.missingYear ? ` · ${t.missingYear} รายการไม่มีราคาปีก่อน นับเท่าเดิม` : ""}`));
+    const ai = el("article", "ai-card summary-ai");
+    const aiChange = t.base ? ((t.next - t.base) / t.base) * 100 : 0;
+    const aiValue = el("div", "ai-value");
+    aiValue.append(document.createTextNode("≈ "), el("b", "", wholeBaht(t.next)));
+    ai.append(aiLabel(`AI ทายเฉลี่ยทั้งเดือน ${t.target ? thMonth(t.target) : "หน้า"}`), aiValue,
+      el("div", "muted", `เฉลี่ย ${t.basePeriod ? thMonth(t.basePeriod) : "เดือนก่อน"} ${wholeBaht(t.base)} → ${moveText(aiChange, 1)}${t.missingAi ? ` · ${t.missingAi} รายการไม่มีค่าทาย นับเท่าเดิม` : ""}`));
+    compare.appendChild(ai);
+    body.append(receipt, compare);
+    const dialog = $("summary-dialog");
+    if (!dialog.open) dialog.showModal();
+    basketChartDrawn = false;
+    drawBasketChart();
+  }
+
+  // บนมือถือ ตะกร้าเป็นแผ่นเลื่อนขึ้นจากล่าง
+  const setCartOpen = (open) => {
+    $("cart").classList.toggle("open", open);
+    $("cart-backdrop").hidden = !open;
+    document.body.classList.toggle("sheet-open", open);
+    if (open) $("cart-close").focus();
+  };
+
+  async function renderBasketPage() {
+    const products = await pricesP();
+    basketProducts = new Map(products.map((p) => [p.product_id, p]));
+    basket = basket.filter((i) => basketProducts.has(i.id));
+    if (!$("shop-groups").children.length) {
+      const groups = [...new Set(products.map((p) => p.product_group).filter(Boolean))];
+      const chips = $("shop-groups");
+      for (const [value, label] of [["", "ทั้งหมด"], ...groups.map((g) => [g, GROUP_LABELS[g] || g])]) {
+        const button = el("button", value === shop.group ? "active" : "", label);
+        button.type = "button";
+        button.dataset.group = value;
+        chips.appendChild(button);
+      }
+      chips.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-group]");
+        if (!button) return;
+        shop.group = button.dataset.group;
+        shop.limit = SHOP_PAGE;
+        chips.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === button));
+        drawShop();
+      });
+      $("shop-search").addEventListener("input", (event) => { shop.query = event.target.value; shop.limit = SHOP_PAGE; drawShop(); });
+      picker($("shop-sort"));
+      $("shop-sort").addEventListener("change", () => { shop.sort = $("shop-sort").value; drawShop(); });
+      $("shop-more").addEventListener("click", () => { shop.limit += SHOP_PAGE; drawShop(); });
+      $("basket-reset").addEventListener("click", () => { basket = DEFAULT_BASKET.map((i) => ({ ...i })); saveBasket(); drawShop(); drawCart(); });
+      $("basket-clear").addEventListener("click", () => { basket = []; saveBasket(); drawShop(); drawCart(); });
+      $("cart-summary").addEventListener("click", openSummary);
+      $("summary-close").addEventListener("click", () => $("summary-dialog").close());
+      $("summary-dialog").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
+      $("cart-bar").addEventListener("click", () => setCartOpen(true));
+      $("cart-close").addEventListener("click", () => setCartOpen(false));
+      $("cart-backdrop").addEventListener("click", () => setCartOpen(false));
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape" && $("cart").classList.contains("open")) setCartOpen(false); });
+    }
+    saveBasket();
+    drawShop();
+    drawCart();
+  }
+
+  // ยอดรวมของตะกร้านี้ย้อนหลังรายเดือน (เฉพาะเดือนที่มีราคาครบทุกรายการ) + จุดที่ AI ทาย
+  async function drawBasketChart() {
+    const container = $("chart-basket");
+    const items = basket.filter((i) => i.qty > 0);
+    if (!items.length) { container.replaceChildren(el("div", "empty-state", "ใส่ของในตะกร้าก่อน")); return; }
+    const key = items.map((i) => i.id).sort().join(",");
+    try {
+      if (!basketHistory || basketHistory.key !== key) basketHistory = { key, data: await api(`/api/basket/history?ids=${key}`) };
+      const { periods, prices } = basketHistory.data;
+      const points = [];
+      periods.forEach((period, index) => {
+        let total = 0;
+        for (const item of items) {
+          const price = prices[item.id]?.[index];
+          if (price == null) return;
+          total += (item.qty / unitOf(basketProducts.get(item.id)).size) * price;
+        }
+        points.push([parseDate(period), total]);
+      });
+      const t = basketTotals();
+      const series = [{ name: "ยอดตะกร้าจริง (ราคาเฉลี่ยรายเดือน)", color: cssVar("--actual"), area: true, areaOpacity: 0.1, endLabel: false, points: points.filter((p) => !t.target || p[0] < parseDate(t.target)) }];
+      if (t.target && t.basePeriod) {
+        series.push({ name: "ที่ AI ทาย", color: cssVar("--ai"), dashed: true, endLabel: false, points: [[parseDate(t.basePeriod), t.base], [parseDate(t.target), t.next]] });
+      }
+      const skipped = periods.length - points.length;
+      $("basket-chart-sub").textContent = `ราคาเฉลี่ยจริงแต่ละเดือน × จำนวนในตะกร้าตอนนี้${skipped ? ` · ข้าม ${skipped} เดือนที่บางรายการไม่มีราคา` : ""}`;
+      line(container, {
+        series, forceLegend: true, height: 260, ariaLabel: "ยอดตะกร้าย้อนหลังรายเดือน", animate: basketChartDrawn ? false : undefined,
+        yFormat: (v, isAxis) => (isAxis ? num(v, 0) : bahtPrice(v)),
+      });
+      basketChartDrawn = true;
+    } catch (error) { showError(container, error); }
+  }
+
+  // ---------- หน้า 6: เบื้องหลังระบบ ----------
   const SOURCE_NAMES = {
     tpso_cpig: "สนค. CPI ประเทศ/ภาค", tpso_cpip: "สนค. CPI จังหวัด", moc_retail_prices: "กรมการค้าภายใน API",
     mol_minimum_wage: "กระทรวงแรงงาน ค่าจ้างขั้นต่ำ", dld_farm_prices: "กรมปศุสัตว์ ราคาหน้าฟาร์ม",
@@ -1135,7 +1515,7 @@
   }
 
   // ---------- router ----------
-  const PAGES = { overview: renderOverview, map: renderMapPage, forecast: renderForecastPage, wage: renderWagePage, data: renderDataPage };
+  const PAGES = { overview: renderOverview, map: renderMapPage, forecast: renderForecastPage, wage: renderWagePage, basket: renderBasketPage, data: renderDataPage };
   async function route() {
     const page = (location.hash || "#overview").slice(1);
     // #prices (ลิงก์เดิม/จากหน้าพยากรณ์) = ส่วนราคาของกินในหน้าแรก
@@ -1157,6 +1537,7 @@
   });
   hydrate();
   prepareReveal();
+  saveBasket();
   window.addEventListener("hashchange", route);
   summaryP().then((s) => {
     if (location.hash && location.hash !== "#overview") {

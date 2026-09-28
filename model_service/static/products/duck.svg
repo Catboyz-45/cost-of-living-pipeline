@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-label="เป็ดสดทั้งตัว"><title>เป็ดสดทั้งตัว</title>
+<rect width="480" height="360" fill="#EFE8DA"/>
+<rect x="0" y="0" width="480" height="120" fill="#F6F1E7"/>
+<rect x="34" y="198" width="412" height="128" rx="22" fill="#B98552"/>
+<rect x="34" y="198" width="412" height="118" rx="22" fill="#CFA06C"/>
+<path d="M60 222 H420 M70 252 H410 M66 284 H414" stroke="#BF8F5C" stroke-width="2" opacity=".6"/>
+<ellipse cx="262" cy="292" rx="170" ry="20" fill="#8B5E34" opacity=".25"/>
+<!-- ขา -->
+<path d="M352 262 C372 270 388 282 398 296" stroke="#E9A24C" stroke-width="12" stroke-linecap="round" fill="none"/>
+<path d="M392 290 L428 300 L420 310 L410 306 L404 318 L394 306 L384 312 Z" fill="#EFA94F" stroke="#C9822E" stroke-width="2" stroke-linejoin="round"/>
+<path d="M336 272 C350 284 358 296 362 306" stroke="#E9A24C" stroke-width="11" stroke-linecap="round" fill="none"/>
+<path d="M356 302 L388 318 L378 326 L370 320 L362 330 L354 318 L344 322 Z" fill="#EFA94F" stroke="#C9822E" stroke-width="2" stroke-linejoin="round"/>
+<!-- คอ (วาดก่อนตัว ตัวจะทับโคนคอ) -->
+<path d="M214 214 C170 206 128 186 104 158" stroke="#C98F68" stroke-width="34" fill="none" stroke-linecap="round"/>
+<path d="M214 214 C170 206 128 186 104 158" stroke="#F3D6BC" stroke-width="28" fill="none" stroke-linecap="round"/>
+<!-- ตัว -->
+<path d="M150 246 C140 190 196 156 270 156 C346 156 398 186 400 232 C402 280 348 298 268 298 C196 298 158 288 150 246 Z" fill="#F3D6BC" stroke="#C98F68" stroke-width="3"/>
+<ellipse cx="258" cy="190" rx="92" ry="20" fill="#FBEADB" opacity=".85"/>
+<circle cx="235" cy="187" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="188" cy="229" r="1.6" fill="#E2B08C" opacity=".55"/><circle cx="186" cy="226" r="1.2" fill="#E2B08C" opacity=".55"/><circle cx="255" cy="178" r="1.3" fill="#E2B08C" opacity=".55"/><circle cx="254" cy="261" r="1.3" fill="#E2B08C" opacity=".55"/><circle cx="216" cy="239" r="2.1" fill="#E2B08C" opacity=".55"/><circle cx="282" cy="214" r="2.2" fill="#E2B08C" opacity=".55"/><circle cx="184" cy="264" r="1.5" fill="#E2B08C" opacity=".55"/><circle cx="202" cy="183" r="1.5" fill="#E2B08C" opacity=".55"/><circle cx="326" cy="190" r="1.8" fill="#E2B08C" opacity=".55"/><circle cx="293" cy="211" r="1.7" fill="#E2B08C" opacity=".55"/><circle cx="213" cy="245" r="1.6" fill="#E2B08C" opacity=".55"/><circle cx="233" cy="234" r="1.7" fill="#E2B08C" opacity=".55"/><circle cx="230" cy="257" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="220" cy="233" r="1.7" fill="#E2B08C" opacity=".55"/><circle cx="337" cy="250" r="1.5" fill="#E2B08C" opacity=".55"/><circle cx="252" cy="253" r="1.4" fill="#E2B08C" opacity=".55"/><circle cx="265" cy="174" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="316" cy="233" r="2.1" fill="#E2B08C" opacity=".55"/><circle cx="233" cy="246" r="1.8" fill="#E2B08C" opacity=".55"/><circle cx="282" cy="220" r="2.0" fill="#E2B08C" opacity=".55"/><circle cx="350" cy="222" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="186" cy="247" r="1.8" fill="#E2B08C" opacity=".55"/><circle cx="228" cy="212" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="179" cy="221" r="1.4" fill="#E2B08C" opacity=".55"/><circle cx="317" cy="184" r="1.4" fill="#E2B08C" opacity=".55"/><circle cx="247" cy="266" r="1.3" fill="#E2B08C" opacity=".55"/><circle cx="258" cy="230" r="2.1" fill="#E2B08C" opacity=".55"/><circle cx="327" cy="265" r="1.5" fill="#E2B08C" opacity=".55"/><circle cx="252" cy="209" r="2.1" fill="#E2B08C" opacity=".55"/><circle cx="208" cy="196" r="1.4" fill="#E2B08C" opacity=".55"/><circle cx="265" cy="235" r="1.5" fill="#E2B08C" opacity=".55"/><circle cx="176" cy="216" r="1.6" fill="#E2B08C" opacity=".55"/><circle cx="280" cy="275" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="270" cy="238" r="1.9" fill="#E2B08C" opacity=".55"/><circle cx="319" cy="266" r="2.0" fill="#E2B08C" opacity=".55"/><circle cx="248" cy="214" r="1.3" fill="#E2B08C" opacity=".55"/><circle cx="292" cy="177" r="1.3" fill="#E2B08C" opacity=".55"/><circle cx="214" cy="188" r="1.5" fill="#E2B08C" opacity=".55"/>
+<!-- ปีกพับ -->
+<path d="M214 228 C246 204 318 204 350 230 C322 252 256 256 214 228 Z" fill="#EDC5A3" stroke="#C98F68" stroke-width="2.5"/>
+<path d="M236 232 C266 222 306 222 332 234" stroke="#C98F68" stroke-width="1.5" fill="none" opacity=".7"/>
+<!-- หัว -->
+<ellipse cx="102" cy="154" rx="25" ry="19" fill="#F3D6BC" stroke="#C98F68" stroke-width="3"/>
+<path d="M82 154 C64 150 48 156 44 164 C58 170 72 168 84 162 Z" fill="#E9B26A" stroke="#C4893F" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M98 148 q6 -4 12 0" stroke="#8C6446" stroke-width="2" fill="none" stroke-linecap="round"/>
+<!-- หาง -->
+<path d="M396 222 C412 218 424 224 426 234 C414 240 402 238 396 234" fill="#F3D6BC" stroke="#C98F68" stroke-width="3"/>
+</svg>

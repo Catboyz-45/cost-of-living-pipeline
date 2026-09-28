@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css?v=29">
+<link rel="stylesheet" href="/static/app.css?v=39">
 </head>
 <body>
 <div class="app">
@@ -25,6 +25,7 @@
       <a href="#map" data-page="map" data-icon="map"><span class="full">จังหวัดไหนแพงเร็ว</span><span class="short">จังหวัด</span></a>
       <a href="#forecast" data-page="forecast" data-icon="sparkle"><span class="full">เดือนหน้าเป็นไง</span><span class="short">AI ทาย</span><span class="nav-ai">AI</span></a>
       <a href="#wage" data-page="wage" data-icon="wallet"><span class="full">ค่าแรงพอไหม</span><span class="short">ค่าแรง</span></a>
+      <a href="#basket" data-page="basket" data-icon="cart"><span class="full">ตะกร้าของฉัน</span><span class="short">ตะกร้า</span><span class="nav-count" id="basket-count" hidden></span></a>
       <a href="#data" data-page="data" data-icon="database" class="nav-tech" title="สำหรับผู้สนใจด้านเทคนิค"><span class="full">เบื้องหลังระบบ</span><span class="short">เบื้องหลัง</span></a>
     </nav>
   </header>
@@ -211,7 +212,59 @@
       </article>
     </section>
 
-    <!-- 5. เบื้องหลังระบบ -->
+    <!-- 5. ตะกร้าของฉัน: หน้าร้านแบบแพลตฟอร์มช้อปปิ้ง ใช้ราคาจริง -->
+    <section class="page" id="page-basket" hidden>
+      <header class="page-head">
+        <span class="eyebrow" data-icon="cart">ช้อปด้วยราคาจริงตลาด กทม. · ตะกร้าจำไว้ในเบราว์เซอร์นี้</span>
+        <h1>ตะกร้าของฉัน</h1>
+        <p class="takeaway" id="basket-takeaway">กำลังโหลด…</p>
+      </header>
+      <div class="shop">
+        <div class="shop-main">
+          <div class="shop-toolbar">
+            <label class="search" data-icon="search"><span class="sr-only">ค้นหาสินค้า</span><input id="shop-search" type="search" placeholder="ค้นหาสินค้า เช่น ไข่ หมู น้ำมัน" autocomplete="off"></label>
+            <div class="field"><span class="field-label" id="shop-sort-label">เรียงตาม</span><select id="shop-sort" aria-labelledby="shop-sort-label">
+              <option value="staple">แนะนำ</option>
+              <option value="up">แพงขึ้นมากสุด</option>
+              <option value="down">ถูกลงมากสุด</option>
+              <option value="cheap">ราคาต่ำ → สูง</option>
+            </select></div>
+          </div>
+          <div class="chips shop-groups" id="shop-groups" role="group" aria-label="หมวดสินค้า"></div>
+          <p class="muted" id="shop-count"></p>
+          <div class="shop-grid" id="shop-grid"></div>
+          <div class="more-row"><button type="button" class="outline" id="shop-more" hidden>ดูสินค้าเพิ่ม</button></div>
+        </div>
+        <aside class="cart" id="cart" aria-label="ตะกร้าสินค้า">
+          <div class="cart-head">
+            <h2 data-icon="cart">ตะกร้า <span id="cart-count">(0)</span></h2>
+            <button type="button" class="cart-close" id="cart-close" aria-label="ปิดตะกร้า">×</button>
+          </div>
+          <div class="cart-list" id="cart-list"></div>
+          <div class="cart-totals" id="cart-totals"></div>
+          <button type="button" class="cart-cta" id="cart-summary" data-icon="receipt">สรุปค่าใช้จ่าย</button>
+          <div class="cart-links">
+            <button type="button" id="basket-reset">ใช้ตะกร้าตัวอย่าง</button>
+            <button type="button" id="basket-clear">ล้างตะกร้า</button>
+          </div>
+        </aside>
+      </div>
+      <p class="note" id="basket-note">มีเฉพาะของกินและน้ำมันรถ เพราะหน่วยงานรัฐเผยแพร่ราคาเป็นบาทเฉพาะสินค้าเหล่านี้ · ของที่ขายเป็นแพ็ก (เช่น ข้าว 15 กก.) คิดต่อหน่วยย่อยให้ · ราคาเดือนหน้าเป็นค่าประมาณจาก % ที่ AI ทายของทั้งหมวดสินค้า · รูปสินค้าเป็นรูปตัวแทนจาก Wikimedia Commons (<a href="/static/products/credits.html" target="_blank" rel="noopener">เครดิตรูปภาพ</a>)</p>
+      <button type="button" class="cart-bar" id="cart-bar" data-icon="cart"><span id="cart-bar-text">ตะกร้า</span><b>ดูตะกร้า</b></button>
+      <div class="cart-backdrop" id="cart-backdrop" hidden></div>
+      <dialog class="summary-dialog" id="summary-dialog" aria-labelledby="summary-title">
+        <div class="summary-head">
+          <h2 id="summary-title" data-icon="receipt">สรุปค่าใช้จ่าย</h2>
+          <button type="button" class="cart-close" id="summary-close" aria-label="ปิด">×</button>
+        </div>
+        <div id="summary-body"></div>
+        <h3 class="summary-sub">ตะกร้านี้ย้อนหลัง 5 ปี</h3>
+        <p class="muted" id="basket-chart-sub">ราคาเฉลี่ยจริงแต่ละเดือน × จำนวนในตะกร้าตอนนี้</p>
+        <div class="chart" id="chart-basket"></div>
+      </dialog>
+    </section>
+
+    <!-- 6. เบื้องหลังระบบ -->
     <section class="page" id="page-data" hidden>
       <header class="page-head" data-icon="database">
         <span class="eyebrow" data-icon="database">Data Pipeline · Apache Airflow · Machine Learning</span>
@@ -272,8 +325,8 @@
   </main>
 </div>
 <div class="tooltip" id="tooltip" role="status" hidden></div>
-<script src="/static/icons.js?v=29"></script>
-<script src="/static/charts.js?v=29"></script>
-<script src="/static/app.js?v=29"></script>
+<script src="/static/icons.js?v=39"></script>
+<script src="/static/charts.js?v=39"></script>
+<script src="/static/app.js?v=39"></script>
 </body>
 </html>

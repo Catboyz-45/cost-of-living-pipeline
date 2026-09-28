@@ -49,7 +49,7 @@ echo "4) โมเดลและหน้าเว็บ"
 model=$(curl -s -m 10 "$DASHBOARD_URL/health" || true)
 if echo "$model" | grep -q '"exists": *true'; then ok "Model API โหลดโมเดลแล้ว"
 else bad "Model API ไม่พร้อม: $model" "รัน: docker compose up -d --build model_api"; fi
-for path in "/" "/api/dashboard/summary" "/api/prices" "/api/forecast/products" "/api/forecast/product?product_id=P11028" "/api/map" "/api/wage?province_code=10" "/api/pipeline"; do
+for path in "/" "/api/dashboard/summary" "/api/prices" "/api/forecast/products" "/api/forecast/product?product_id=P11028" "/api/basket/history?ids=P11028,F52002" "/api/map" "/api/wage?province_code=10" "/api/pipeline"; do
   result=$(curl -s -o /dev/null -m 15 -w "%{http_code} %{time_total}" "$DASHBOARD_URL$path" || echo "000 0")
   code=${result%% *}; seconds=${result##* }
   if [ "$code" = "200" ]; then ok "$path ($code, ${seconds}s)"; else bad "$path ตอบ $code" "ดู log: docker logs model_api --tail 50"; fi

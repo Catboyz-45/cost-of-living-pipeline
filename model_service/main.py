@@ -636,6 +636,31 @@ def map_history(commodity_code: str = "00000", months: int = Query(60, ge=12, le
     return {"periods": periods, "values": values}
 
 
+@app.get("/api/basket/history")
+def basket_history(
+    ids: str = Query(..., pattern=r"^[A-Z]\d{5}(,[A-Z]\d{5}){0,29}$"),
+    months: int = Query(60, ge=12, le=120),
+) -> dict[str, Any]:
+    """ราคาเฉลี่ยรายเดือนของสินค้าในตะกร้า เรียงตามเดือนเดียวกัน (ไม่มีราคาเดือนไหน = null) ให้หน้าเว็บคูณจำนวนเอง."""
+    product_ids = sorted(set(ids.split(",")))
+    rows = _query(
+        """
+        SELECT product_id, period_date, avg_price
+        FROM retail_price_monthly
+        WHERE product_id = ANY(%s)
+          AND period_date > (SELECT MAX(period_date) FROM retail_price_monthly) - make_interval(months => %s)
+        ORDER BY period_date
+        """,
+        (product_ids, months),
+    )
+    periods = sorted({row["period_date"] for row in rows})
+    index = {period: i for i, period in enumerate(periods)}
+    values: dict[str, list[float | None]] = {pid: [None] * len(periods) for pid in product_ids}
+    for row in rows:
+        values[row["product_id"]][index[row["period_date"]]] = row["avg_price"]
+    return {"periods": periods, "prices": values}
+
+
 @app.get("/api/forecast/products")
 def forecast_products(commodity_code: str = "00000", n: int = Query(6, ge=1, le=40)) -> dict[str, Any]:
     """สินค้าที่มีราคาจริงซึ่ง AI คาดว่าจะแพงขึ้น/ถูกลงมากที่สุด (ไม่เกิน 2 ตัวต่อหมวด เพราะในหมวดเดียวกันได้ % เท่ากัน)."""
