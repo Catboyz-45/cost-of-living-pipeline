@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css?v=19">
+<link rel="stylesheet" href="/static/app.css?v=20">
 </head>
 <body>
 <div class="app">
@@ -44,6 +44,23 @@
         <article class="card hero tone-blue" id="hero"></article>
         <div class="tiles" id="overview-tiles"></div>
       </div>
+
+      <article class="card" id="dish-card">
+        <div class="card-head">
+          <div>
+            <h2 data-icon="bowl">ข้าว 1 จาน ต้นทุนวัตถุดิบเท่าไหร่
+              <button type="button" class="info" data-tip="คิดจากราคาจริงของวัตถุดิบ (กรมการค้าภายใน) × ปริมาณโดยประมาณต่อจานที่ตั้งเป็นตัวอย่าง ไม่รวมใบกะเพรา พริก เครื่องปรุง ค่าแก๊ส ค่าแรง และค่าร้าน ราคาขายจริงของร้านอาหารจึงสูงกว่านี้" aria-label="อธิบาย">i</button>
+            </h2>
+            <p class="muted" id="dish-sub">ราคาจริงของวัตถุดิบ × ปริมาณต่อจาน</p>
+          </div>
+          <div class="chips chips-wrap" id="dish-chips" role="group" aria-label="เมนู"></div>
+        </div>
+        <div class="dish-layout">
+          <div class="receipt" id="dish-receipt"></div>
+          <div class="dish-timeline" id="dish-timeline"></div>
+        </div>
+        <div class="chart" id="chart-dish"></div>
+      </article>
 
       <article class="card" id="price-explorer">
         <div class="card-head">
@@ -112,6 +129,12 @@
       </div>
       <div class="map-layout">
         <article class="card map-card">
+          <div class="timelapse">
+            <button type="button" id="map-play" class="play">▶ เล่นย้อนหลัง 5 ปี</button>
+            <input type="range" id="map-slider" min="0" max="0" value="0" step="1" aria-label="เลือกเดือน" disabled>
+          </div>
+          <div class="tl-month" id="map-month"></div>
+          <p class="muted tl-caption" id="map-caption">กด ▶ เพื่อดูว่าของแพงขึ้นเร็วในจังหวัดไหน แต่ละเดือนย้อนหลัง 5 ปี</p>
           <div class="map" id="map"></div>
           <div class="legend-scale" id="map-legend"></div>
         </article>
@@ -238,8 +261,8 @@
   </main>
 </div>
 <div class="tooltip" id="tooltip" role="status" hidden></div>
-<script src="/static/icons.js?v=19"></script>
-<script src="/static/charts.js?v=19"></script>
-<script src="/static/app.js?v=19"></script>
+<script src="/static/icons.js?v=20"></script>
+<script src="/static/charts.js?v=20"></script>
+<script src="/static/app.js?v=20"></script>
 </body>
 </html>

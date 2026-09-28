@@ -424,3 +424,42 @@ input[type="search"]:focus { outline: none; border-color: var(--accent); box-sha
   .ai-value { font-size: 1.3rem; }
   .tiles-3 { grid-template-columns: 1fr; }
 }
+
+/* ---------- ต้นทุนข้าว 1 จาน ---------- */
+.dish-layout { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: 20px; margin: 12px 0 8px; align-items: start; }
+.receipt {
+  background: #fffdf8; border: 1px dashed var(--border); border-radius: 16px; padding: 16px 18px;
+  font-size: .9rem;
+}
+.receipt-title { font-weight: 600; margin-bottom: 8px; }
+.receipt-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dotted var(--grid); }
+.receipt-cost { font-family: var(--mono); font-size: .86rem; }
+.receipt-total { border-bottom: 0; border-top: 1px solid var(--ink); margin-top: 6px; padding-top: 8px; font-weight: 600; }
+.receipt-total .receipt-cost { font-size: 1rem; }
+.receipt-note { margin-top: 8px; font-size: .76rem; }
+.dish-timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.tl-step { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; position: relative; }
+.tl-step:not(:last-child)::after { content: "→"; position: absolute; right: -9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .8rem; }
+.tl-label { font-size: .78rem; color: var(--ink-2); }
+.tl-value { font-size: 1.35rem; letter-spacing: -.3px; margin: 2px 0; font-family: var(--mono); font-weight: 500; }
+.tl-diff { font-size: .74rem; color: var(--muted); }
+.tl-now { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.tl-now .tl-value { color: var(--accent); }
+.tl-ai { background: #f2eeff; }
+.tl-ai .tl-label { color: #6741d9; font-weight: 600; }
+
+/* ---------- แผนที่เล่นย้อนเวลา ---------- */
+.timelapse { display: flex; align-items: center; gap: 12px; width: 100%; }
+.timelapse .play { background: var(--tone); color: #ffffff; white-space: nowrap; }
+.timelapse .play:hover { filter: brightness(.95); }
+.timelapse input[type="range"] { flex: 1; accent-color: var(--tone); }
+.tl-month { align-self: flex-start; font-size: 1.8rem; letter-spacing: -.5px; margin: 10px 0 0; font-family: var(--mono); font-weight: 500; }
+.tl-caption { align-self: flex-start; min-height: 2.6em; }
+@media (max-width: 1100px) {
+  .dish-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .dish-timeline { grid-template-columns: 1fr 1fr; }
+  .tl-step::after { display: none; }
+  .timelapse { flex-wrap: wrap; }
+}

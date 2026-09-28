@@ -321,6 +321,7 @@
       if (yoy !== null) fuelTile.insertBefore(deltaNode(yoy, "% จากปีก่อน"), fuelTile.querySelector(".sub"));
     }
     renderAiBanner(summary.forecast["00000"], products);
+    renderDishes();
 
     // หมวดค่าใช้จ่ายจริงเท่านั้น (ตัดกลุ่มสำหรับนักวิเคราะห์) เรียงจากแพงขึ้นมากสุด
     const everyday = categories.items.filter((item) => isEverydayCategory(item.commodity_code) && item.change_yoy !== null);
@@ -363,6 +364,73 @@
         })),
       });
     } catch (error) { showError(container, error); }
+  }
+
+  // ---------- ต้นทุนวัตถุดิบข้าว 1 จาน ----------
+  let dishId = "kaprao";
+  async function renderDishes() {
+    try {
+      const list = await once("dishes", () => api("/api/dishes"));
+      if (!list.length) { $("dish-receipt").replaceChildren(el("div", "empty-state", "ยังไม่มีราคาวัตถุดิบครบ")); return; }
+      const chips = $("dish-chips");
+      if (!chips.children.length) {
+        for (const dish of list) {
+          const button = el("button", "", dish.name);
+          button.dataset.dish = dish.id;
+          chips.appendChild(button);
+        }
+        chips.addEventListener("click", (event) => {
+          const button = event.target.closest("button[data-dish]");
+          if (!button) return;
+          dishId = button.dataset.dish;
+          drawDish(list);
+        });
+      }
+      drawDish(list);
+    } catch (error) { showError($("dish-receipt"), error); }
+  }
+
+  function drawDish(list) {
+    const dish = list.find((d) => d.id === dishId) || list[0];
+    document.querySelectorAll("#dish-chips button").forEach((b) => b.classList.toggle("active", b.dataset.dish === dish.id));
+    // ใบเสร็จวัตถุดิบ
+    const receipt = $("dish-receipt");
+    receipt.replaceChildren(el("div", "receipt-title", dish.name));
+    for (const item of dish.ingredients) {
+      const row = el("div", "receipt-row");
+      row.append(el("span", "", item.text), el("span", "receipt-cost", bahtPrice(item.cost)));
+      receipt.appendChild(row);
+    }
+    const total = el("div", "receipt-row receipt-total");
+    total.append(el("span", "", "รวมค่าวัตถุดิบ"), el("span", "receipt-cost", bahtPrice(dish.cost_now)));
+    receipt.append(total, el("div", "muted receipt-note", `ราคาจริง ${thDay(dish.price_date)} · ไม่รวมกะเพรา พริก เครื่องปรุง ค่าแก๊ส`));
+
+    // ไทม์ไลน์: 10 ปีก่อน → 5 ปีก่อน → ปีก่อน → วันนี้ → AI ทาย
+    const timeline = $("dish-timeline");
+    timeline.replaceChildren();
+    const steps = [
+      ["10 ปีก่อน", dish.cost_10y_ago, "past"], ["5 ปีก่อน", dish.cost_5y_ago, "past"], ["ปีก่อน", dish.cost_1y_ago, "past"],
+      ["วันนี้", dish.cost_now, "now"], [`AI ทาย ${dish.target_period ? thMonth(dish.target_period) : "เดือนหน้า"}`, dish.cost_next, "ai"],
+    ];
+    for (const [label, value, kind] of steps) {
+      if (value === null || value === undefined) continue;
+      const step = el("div", `tl-step tl-${kind}`);
+      step.append(el("div", "tl-label", label), el("div", "tl-value", bahtPrice(value)));
+      if (kind === "past") step.appendChild(el("div", "tl-diff", `วันนี้${moveText((dish.cost_now / value - 1) * 100, 0)}`));
+      if (kind === "ai") step.appendChild(el("div", "tl-diff", moveText((value / dish.cost_now - 1) * 100, 1)));
+      timeline.appendChild(step);
+    }
+    const base = dish.cost_5y_ago || dish.cost_1y_ago;
+    $("dish-sub").textContent = base
+      ? `วัตถุดิบ${dish.name} 1 จาน วันนี้ ${bahtPrice(dish.cost_now)} · เทียบ${dish.cost_5y_ago ? " 5 ปีก่อน" : "ปีก่อน"}${moveText((dish.cost_now / base - 1) * 100, 0)} (${dish.cost_now >= base ? "+" : ""}${num(dish.cost_now - base, 2)} บาทต่อจาน)`
+      : `วัตถุดิบ${dish.name} 1 จาน วันนี้ ${bahtPrice(dish.cost_now)}`;
+
+    const points = dish.series.map((row) => [parseDate(row.period_date), row.cost]);
+    const series = [{ name: "ต้นทุนวัตถุดิบต่อจาน (เฉลี่ยรายเดือน)", color: cssVar("--series-1"), area: true, endLabel: false, points }];
+    if (dish.cost_next && points.length) {
+      series.push({ name: "ที่ AI ทาย", color: cssVar("--forecast"), dashed: true, endLabel: false, points: [points[points.length - 2] || points[points.length - 1], [parseDate(dish.target_period), dish.cost_next]] });
+    }
+    line($("chart-dish"), { series, forceLegend: true, ariaLabel: "ต้นทุนวัตถุดิบต่อจานย้อนหลัง", yFormat: (v, isAxis) => (isAxis ? num(v, 0) : bahtPrice(v)) });
   }
 
   // ---------- หน้า 2: จังหวัดไหนแพงเร็ว ----------
@@ -416,12 +484,76 @@
       return { code: item.code, cells: [String(index + 1), name, pct(item.yoy), pct(item.mom), pct(item.predicted_change_pct)] };
     }), (row) => selectProvince(row.code, values, data));
     selectProvince(mapSelected && values.has(mapSelected) ? mapSelected : ranked[0]?.code, values, data);
+    stopTimelapse();
+    mapNames = new Map(data.items.map((item) => [item.code, item.name]));
+    $("map-month").textContent = thMonth(data.period);
+    $("map-caption").textContent = "กด ▶ เพื่อดูว่าของแพงขึ้นเร็วในจังหวัดไหน แต่ละเดือนย้อนหลัง 5 ปี";
+    $("map-slider").disabled = true;
 
     if (ranked.length) {
       const top = ranked[0], bottom = ranked[ranked.length - 1];
       $("map-takeaway").textContent = `${topic} (${thMonth(data.period)}): ${top.name}${moveText(top.yoy)} จากปีก่อน เร็วที่สุดใน ${ranked.length} จังหวัด ส่วน${bottom.name}${moveText(bottom.yoy)} · สีแดงเข้ม = แพงขึ้นเร็ว สีฟ้า = ถูกลง`;
     }
   }
+
+  // ---------- แผนที่เล่นย้อนเวลา ----------
+  let mapNames = new Map();
+  let playTimer = null;
+  let timelapse = null; // { history, maxAbs }
+  function stopTimelapse() {
+    if (playTimer) clearInterval(playTimer);
+    playTimer = null;
+    $("map-play").textContent = "▶ เล่นย้อนหลัง 5 ปี";
+  }
+  function showFrame(index) {
+    const { history, maxAbs } = timelapse;
+    const values = new Map();
+    for (const [code, list] of Object.entries(history.values)) {
+      if (list[index] !== null && list[index] !== undefined) values.set(code, { value: list[index], extra: [] });
+    }
+    mapHandle.recolor(values, maxAbs);
+    $("map-slider").value = String(index);
+    $("map-month").textContent = thMonth(history.periods[index]);
+    const entries = [...values.entries()];
+    if (entries.length) {
+      const mean = entries.reduce((sum, [, record]) => sum + record.value, 0) / entries.length;
+      const [topCode, top] = entries.reduce((best, entry) => (entry[1].value > best[1].value ? entry : best));
+      $("map-caption").textContent = `${entries.length} จังหวัดเฉลี่ย${moveText(mean, 1)} จากปีก่อน · เร็วที่สุด: ${mapNames.get(topCode) || topCode} (${pct(top.value, 1)})`;
+    }
+  }
+  async function loadTimelapse() {
+    const code = $("map-commodity").value;
+    const history = await once(`maphist-${code}`, () => api(`/api/map/history?commodity_code=${code}`));
+    // สเกลสีเดียวทั้ง 5 ปี (percentile 95) จึงเทียบสีข้ามเดือนได้
+    const all = Object.values(history.values).flat().filter((v) => v !== null).map(Math.abs).sort((a, b) => a - b);
+    const maxAbs = Math.max(0.5, Math.ceil((all[Math.floor(all.length * 0.95)] || 1) * 2) / 2);
+    timelapse = { history, maxAbs };
+    divergingLegend($("map-legend"), maxAbs, (v) => pct(v, 1));
+    const slider = $("map-slider");
+    slider.max = String(history.periods.length - 1);
+    slider.disabled = false;
+    return timelapse;
+  }
+  async function togglePlay() {
+    if (playTimer) { stopTimelapse(); return; }
+    const { history } = await loadTimelapse();
+    const last = history.periods.length - 1;
+    let index = Number($("map-slider").value);
+    if (!(index >= 0 && index < last)) index = 0;
+    showFrame(index);
+    $("map-play").textContent = "⏸ หยุด";
+    playTimer = setInterval(() => {
+      index += 1;
+      showFrame(index);
+      if (index >= last) stopTimelapse();
+    }, 350);
+  }
+  $("map-play").addEventListener("click", togglePlay);
+  $("map-slider").addEventListener("input", async () => {
+    stopTimelapse();
+    if (!timelapse) await loadTimelapse();
+    showFrame(Number($("map-slider").value));
+  });
 
   function selectProvince(code, values, data) {
     const record = values.get(code);

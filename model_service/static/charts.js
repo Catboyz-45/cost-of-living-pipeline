@@ -341,14 +341,17 @@
     const svg = svgEl("svg", { viewBox: `-4 -4 ${width + 8} ${height + 8}`, role: "img", "aria-label": options.ariaLabel || "แผนที่ประเทศไทย" }, container);
     const project = ([lon, lat]) => `${((lon - minLon) * kx * scale).toFixed(1)},${((maxLat - lat) * scale).toFixed(1)}`;
     const paths = new Map();
+    // ค่าปัจจุบันเก็บแยกไว้ เพื่อให้ recolor() เปลี่ยนสีทั้งแผนที่ได้โดยไม่ต้องวาดเส้นขอบใหม่ (ใช้กับการเล่นย้อนเวลา)
+    let current = { values: options.values, maxAbs: options.maxAbs, format: options.format, valueLabel: options.valueLabel };
     for (const feature of features) {
       const { code, name } = feature.properties;
       const d = feature.geometry.coordinates.map((polygon) => polygon.map((ring) => `M${ring.map(project).join("L")}Z`).join("")).join("");
-      const record = options.values.get(code);
-      const path = svgEl("path", { d, fill: divergingColor(record ? record.value : null, options.maxAbs), tabindex: 0 }, svg);
+      const initial = current.values.get(code);
+      const path = svgEl("path", { d, fill: divergingColor(initial ? initial.value : null, current.maxAbs), tabindex: 0 }, svg);
       path.addEventListener("pointermove", (event) => {
+        const record = current.values.get(code);
         showTooltip(event, name, record
-          ? [{ label: options.valueLabel || "ค่า", value: options.format(record.value), color: path.getAttribute("fill") }, ...(record.extra || [])]
+          ? [{ label: current.valueLabel || "ค่า", value: current.format(record.value), color: path.getAttribute("fill") }, ...(record.extra || [])]
           : [{ label: "ไม่มีข้อมูล", value: "–" }]);
       });
       path.addEventListener("pointerleave", hideTooltip);
@@ -361,6 +364,13 @@
         for (const [key, path] of paths) path.classList.toggle("selected", key === code);
         const chosen = paths.get(code);
         if (chosen) svg.appendChild(chosen); // ยกขึ้นมาบนสุด ให้ขอบไม่ถูกจังหวัดข้างเคียงทับ
+      },
+      recolor(values, maxAbs, extra = {}) {
+        current = { ...current, ...extra, values, maxAbs };
+        for (const [code, path] of paths) {
+          const record = values.get(code);
+          path.setAttribute("fill", divergingColor(record ? record.value : null, maxAbs));
+        }
       },
     };
   }

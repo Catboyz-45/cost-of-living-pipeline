@@ -522,6 +522,120 @@ def price_history(product_id: str = Query(..., pattern=r"^[A-Z]\d{5}$")) -> dict
     return {"product_id": product_id, "monthly": monthly, "daily": daily}
 
 
+# ---------------------------------------------------------------------------
+# ต้นทุนวัตถุดิบข้าว 1 จาน จากราคาขายปลีกจริง (ปริมาณต่อจานเป็นค่าประมาณ)
+# ใช้เฉพาะวัตถุดิบที่มีราคาย้อนหลังครบ 10 ปี จึงไม่รวมใบกะเพรา พริกสด และเครื่องปรุง
+# ---------------------------------------------------------------------------
+DISHES = [
+    {
+        "id": "kaprao", "name": "กะเพราหมูไข่ดาว",
+        "ingredients": [("R13001", 0.09, "ข้าวสาร 90 กรัม"), ("P11003", 0.1, "หมูสะโพก 100 กรัม"),
+                        ("P11028", 1, "ไข่ไก่ 1 ฟอง"), ("P16011", 0.03, "น้ำมันปาล์ม 30 มล."), ("P15001", 0.01, "กระเทียม 10 กรัม")],
+    },
+    {
+        "id": "omelet", "name": "ข้าวไข่เจียว",
+        "ingredients": [("R13001", 0.09, "ข้าวสาร 90 กรัม"), ("P11028", 2, "ไข่ไก่ 2 ฟอง"), ("P16011", 0.04, "น้ำมันปาล์ม 40 มล.")],
+    },
+    {
+        "id": "kale", "name": "ผัดคะน้าหมู + ข้าว",
+        "ingredients": [("R13001", 0.09, "ข้าวสาร 90 กรัม"), ("P11003", 0.08, "หมูสะโพก 80 กรัม"), ("P13001", 0.1, "คะน้า 100 กรัม"),
+                        ("P16011", 0.02, "น้ำมันปาล์ม 20 มล."), ("P15001", 0.01, "กระเทียม 10 กรัม")],
+    },
+    {
+        "id": "mackerel", "name": "ปลาทูทอด + ข้าว",
+        "ingredients": [("R13001", 0.09, "ข้าวสาร 90 กรัม"), ("P12014", 0.15, "ปลาทู 150 กรัม"), ("P16011", 0.05, "น้ำมันปาล์ม 50 มล."),
+                        ("P13024", 0.05, "แตงกวา 50 กรัม")],
+    },
+]
+UNIT_SIZE_PATTERN = re.compile(r"/\s*(\d+(?:\.\d+)?)\s*")
+
+
+def _unit_size(unit: str | None) -> float:
+    """หน่วยของกรมการค้าภายในบางตัวเป็นหลายหน่วยต่อราคา เช่น "บาท/15 กก." -> 15."""
+    match = UNIT_SIZE_PATTERN.search(unit or "")
+    return float(match.group(1)) if match else 1.0
+
+
+@app.get("/api/dishes")
+def dishes() -> list[dict[str, Any]]:
+    """ต้นทุนวัตถุดิบต่อจาน: วันนี้, 1/5/10 ปีก่อน, ที่ AI ทายเดือนถัดไป และเส้นรายเดือนย้อนหลัง."""
+    catalog = {item["product_id"]: item for item in prices()}
+    product_ids = sorted({pid for dish in DISHES for pid, _, _ in dish["ingredients"]})
+    monthly_rows = _query(
+        "SELECT product_id, period_date, avg_price FROM retail_price_monthly WHERE product_id = ANY(%s)",
+        (product_ids,),
+    )
+    monthly: dict[str, dict[date, float]] = {}
+    for row in monthly_rows:
+        monthly.setdefault(row["product_id"], {})[row["period_date"]] = row["avg_price"]
+
+    result = []
+    for dish in DISHES:
+        parts = [(catalog.get(pid), pid, qty, text) for pid, qty, text in dish["ingredients"]]
+        if any(product is None for product, _, _, _ in parts):
+            continue  # วัตถุดิบบางตัวไม่มีราคาล่าสุด ข้ามเมนูนี้
+        # ต้นทุนรายเดือน: นับเฉพาะเดือนที่มีราคาครบทุกวัตถุดิบ
+        months = set.intersection(*(set(monthly.get(pid, {})) for _, pid, _, _ in parts))
+        series = [
+            (month, sum(qty * monthly[pid][month] / _unit_size(product["unit"]) for product, pid, qty, _ in parts))
+            for month in sorted(months)
+        ]
+        by_month = dict(series)
+        latest_month = series[-1][0] if series else None
+
+        def cost_ago(years: int) -> float | None:
+            if latest_month is None:
+                return None
+            return by_month.get(date(latest_month.year - years, latest_month.month, 1))
+
+        ingredients = []
+        for product, pid, qty, text in parts:
+            size = _unit_size(product["unit"])
+            ingredients.append({
+                "product_id": pid, "text": text, "label": product["label"],
+                "cost": qty * product["latest_price"] / size,
+                "cost_1y_ago": qty * product["price_1y_ago"] / size if product["price_1y_ago"] else None,
+                "next_cost": qty * product["next_month_price"] / size if product["next_month_price"] else None,
+            })
+        forecasts = [item["next_cost"] for item in ingredients]
+        sample = parts[0][0]
+        result.append({
+            "id": dish["id"], "name": dish["name"], "ingredients": ingredients,
+            "cost_now": sum(item["cost"] for item in ingredients),
+            "cost_1y_ago": cost_ago(1), "cost_5y_ago": cost_ago(5), "cost_10y_ago": cost_ago(10),
+            "cost_next": sum(forecasts) if all(value is not None for value in forecasts) else None,
+            "target_period": sample.get("target_period"),
+            "price_date": max(product["price_date"] for product, _, _, _ in parts),
+            "series": [{"period_date": month, "cost": cost} for month, cost in series],
+        })
+    return result
+
+
+@app.get("/api/map/history")
+def map_history(commodity_code: str = "00000", months: int = Query(60, ge=12, le=240)) -> dict[str, Any]:
+    """อัตราเปลี่ยนแปลงเทียบปีก่อนของทุกจังหวัดย้อนหลังรายเดือน สำหรับแผนที่เล่นย้อนเวลา."""
+    _check_commodity(commodity_code)
+    rows = _query(
+        """
+        SELECT CASE WHEN area_type = 'region' THEN '10' ELSE area_code END AS code, period_date, change_yoy
+        FROM cpi_monthly
+        WHERE commodity_code = %s AND change_yoy IS NOT NULL
+          AND (area_type = 'province' OR (area_type = 'region' AND area_code = '10'))
+          AND period_date > (
+              SELECT MAX(period_date) FROM cpi_monthly WHERE area_type = 'province' AND commodity_code = %s
+          ) - make_interval(months => %s)
+        ORDER BY period_date
+        """,
+        (commodity_code, commodity_code, months),
+    )
+    periods = sorted({row["period_date"] for row in rows})
+    index = {period: i for i, period in enumerate(periods)}
+    values: dict[str, list[float | None]] = {}
+    for row in rows:
+        values.setdefault(row["code"], [None] * len(periods))[index[row["period_date"]]] = row["change_yoy"]
+    return {"periods": periods, "values": values}
+
+
 @app.get("/api/forecast/products")
 def forecast_products(commodity_code: str = "00000", n: int = Query(6, ge=1, le=40)) -> dict[str, Any]:
     """สินค้าที่มีราคาจริงซึ่ง AI คาดว่าจะแพงขึ้น/ถูกลงมากที่สุด (ไม่เกิน 2 ตัวต่อหมวด เพราะในหมวดเดียวกันได้ % เท่ากัน)."""
