@@ -520,3 +520,40 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .pf-now, .pf-arrow, .pf-chg { display: none; }
   .note { margin-top: -16px; }
 }
+
+/* ---------- อนิเมชัน ----------
+ * ใช้เล่าลำดับเรื่อง ไม่ใช่ตกแต่ง: ตัวเลขนับขึ้น, กราฟวาดจากอดีตไปปัจจุบันแล้วค่า AI ค่อยโผล่,
+ * แท่งโตทีละแท่ง, ป้าย AI มีแสงวิ่งผ่าน, การ์ดเลื่อนขึ้นเมื่อเลื่อนจอมาถึง */
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes grow-y { from { transform: scaleY(0); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes shine { 0% { background-position: 100% 0; } 55%, 100% { background-position: 0 0; } }
+@keyframes settle { 0% { background: var(--ai-wash); } 100% { background: transparent; } }
+
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1); }
+.reveal.in { opacity: 1; transform: none; }
+
+.late-in { animation: fade-in .5s .9s both; }
+.bar { animation: grow-x .7s cubic-bezier(.2, .7, .2, 1) both; }
+.bar.pos { transform-origin: left center; }
+.bar.neg { transform-origin: right center; }
+.bar-value { animation: fade-in .4s .5s both; }
+.yoy-bar { transform-box: fill-box; animation: grow-y .5s cubic-bezier(.2, .7, .2, 1) both; }
+.yoy-bar.pos { transform-origin: 50% 100%; }
+.yoy-bar.neg { transform-origin: 50% 0; }
+.step-bar { transform-origin: 50% 100%; animation: grow-y .6s cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--delay, 0ms); }
+.step-value, .step-label { animation: fade-in .4s both; animation-delay: calc(var(--delay, 0ms) + .3s); }
+
+.shine {
+  background: linear-gradient(100deg, var(--ai) 42%, #c4b5f6 50%, var(--ai) 58%);
+  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shine 4.5s ease-in-out infinite;
+}
+.badge-big.settled { border-radius: 12px; animation: settle 1.2s ease-out; }
+.picker-panel { animation: fade-in .15s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+  .shine { color: var(--ai); background: none; }
+}

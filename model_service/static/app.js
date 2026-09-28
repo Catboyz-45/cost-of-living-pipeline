@@ -27,6 +27,59 @@
   // element ที่มีไอคอน (CSS วาดไอคอนจาก --icon)
   const withIcon = (node, name) => { node.style.setProperty("--icon", iconUrl(name)); return node; };
   const SVG_NS = "http://www.w3.org/2000/svg";
+  const reduceMotion = Charts.reduceMotion;
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // ---------- อนิเมชัน (ปิดเองถ้าเครื่องตั้งค่าลดการเคลื่อนไหว) ----------
+  // ตัวเลขนับจาก from ไปหา to เช่น 100.00 -> 102.53
+  function countUp(node, to, { from = 0, format, duration = 1200 } = {}) {
+    if (reduceMotion || document.hidden || !Number.isFinite(to)) { node.textContent = format(to); return; }
+    const start = performance.now();
+    let done = false;
+    const step = (now) => {
+      if (done) return;
+      const t = Math.min(1, (now - start) / duration);
+      node.textContent = format(from + (to - from) * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(step); else done = true;
+    };
+    node.textContent = format(from);
+    requestAnimationFrame(step);
+    // กันกรณีเบราว์เซอร์พักอนิเมชัน (แท็บเบื้องหลัง): ครบเวลาแล้วต้องแสดงค่าจริงเสมอ
+    setTimeout(() => { if (!done) { done = true; node.textContent = format(to); } }, duration + 100);
+  }
+  // ตัวเลขวิ่งสลับระหว่างรอ AI คิด แล้วคืนฟังก์ชันสำหรับหยุด
+  function shuffleDigits(node) {
+    const original = node.textContent;
+    if (reduceMotion) return () => {};
+    const timer = setInterval(() => {
+      node.textContent = original.replace(/\d/g, () => String(Math.floor(Math.random() * 10)));
+    }, 60);
+    return () => { clearInterval(timer); node.textContent = original; };
+  }
+  // การ์ดและส่วนต่าง ๆ ค่อยเลื่อนขึ้นเมื่อเลื่อนจอมาถึง (ครั้งเดียว)
+  const revealObserver = !reduceMotion && "IntersectionObserver" in window
+    ? new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add("in");
+        revealObserver.unobserve(entry.target);
+      }
+    }, { rootMargin: "0px 0px -6% 0px" })
+    : null;
+  function prepareReveal() {
+    // เปิดหน้าในแท็บเบื้องหลัง เบราว์เซอร์อาจไม่แจ้งการเลื่อนจอ จึงไม่ซ่อนอะไรเลยเพื่อให้เห็นเนื้อหาแน่นอน
+    if (!revealObserver || document.hidden) return;
+    document.querySelectorAll(".page > *:not(.block):not(.page-head), .block > *").forEach((node) => {
+      node.classList.add("reveal");
+      revealObserver.observe(node);
+    });
+  }
+  // ป้าย AI: ไอคอน + ข้อความที่มีแสงวิ่งผ่าน
+  function aiLabel(text) {
+    const label = withIcon(el("div", "ai-label"), "sparkle");
+    label.appendChild(el("span", "shine", text));
+    return label;
+  }
   const svgEl = (tag, attrs = {}, parent) => { const node = document.createElementNS(SVG_NS, tag); for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); if (parent) parent.appendChild(node); return node; };
   const changeColor = (value) => (value > 0.05 ? cssVar("--bad") : value < -0.05 ? cssVar("--good") : cssVar("--ink-2"));
   // "แพงขึ้น 2.53%" / "ถูกลง 1.2%" / "ราคาเท่าเดิม"
@@ -393,21 +446,21 @@
     const heroLine = (...parts) => { const span = el("span", "line"); span.append(...parts); return span; };
     hero.replaceChildren(
       heroLine(document.createTextNode("ของที่ปีก่อนจ่าย "), numSpan("100"), document.createTextNode(" บาท")), el("br"),
-      heroLine(document.createTextNode("วันนี้ต้องจ่าย "), numSpan(num(100 + inflation, 2), inflation > 0 ? "up" : inflation < 0 ? "down" : ""), document.createTextNode(" บาท")),
+      heroLine(document.createTextNode("วันนี้ต้องจ่าย "), numSpan("100.00", inflation > 0 ? "up" : inflation < 0 ? "down" : ""), document.createTextNode(" บาท")),
     );
+    countUp(hero.querySelector(".num.up, .num.down") || hero.querySelectorAll(".num")[1], 100 + inflation, { from: 100, format: (v) => num(v, 2), duration: 1600 });
     yoyBars($("chart-yoy"), headline.slice(-12));
 
     const tiles = $("overview-tiles");
     tiles.replaceChildren();
-    tile(tiles, { label: "ค่าอาหารและเครื่องดื่ม", value: pct(last(food).yoy), sub: "จากปีก่อน", icon: "bowl" });
-    tile(tiles, { label: "ค่าน้ำมัน ไฟ แก๊ส", value: pct(last(energy).yoy), sub: "จากปีก่อน", icon: "bolt" });
+    const foodTile = tile(tiles, { label: "ค่าอาหารและเครื่องดื่ม", value: pct(0), sub: "จากปีก่อน", icon: "bowl" });
+    countUp(foodTile.querySelector(".value"), last(food).yoy, { format: (v) => pct(v) });
+    const energyTile = tile(tiles, { label: "ค่าน้ำมัน ไฟ แก๊ส", value: pct(0), sub: "จากปีก่อน", icon: "bolt" });
+    countUp(energyTile.querySelector(".value"), last(energy).yoy, { format: (v) => pct(v) });
     const fuelTile = tile(tiles, { label: "แก๊สโซฮอล์ 95 วันนี้", value: "–", sub: "ราคาหน้าปั๊ม กรุงเทพฯ", icon: "fuel" });
     const wage = summary.bangkok_wage;
-    const wageTile = tile(tiles, {
-      label: "ค่าแรงขั้นต่ำ กทม.",
-      value: wage ? `${num(wage.latest.nominal_wage, 0)} ฿/วัน` : "–",
-      sub: "ค่าแรง 1 วัน", icon: "wallet",
-    });
+    const wageTile = tile(tiles, { label: "ค่าแรงขั้นต่ำ กทม.", value: "–", sub: "ค่าแรง 1 วัน", icon: "wallet" });
+    if (wage) countUp(wageTile.querySelector(".value"), wage.latest.nominal_wage, { format: (v) => `${num(v, 0)} ฿/วัน` });
     $("freshness").textContent = `ข้อมูลถึง ${thMonth(latest)}`;
 
     const [products, categories] = await Promise.all([
@@ -418,7 +471,7 @@
     if (wage && egg) wageTile.querySelector(".sub").textContent = `ซื้อไข่ได้วันละ ${num(wage.latest.nominal_wage / egg.latest_price, 0)} ฟอง`;
     const fuel = products.find((p) => p.product_id === "F52002");
     if (fuel) {
-      fuelTile.querySelector(".value").textContent = `${bahtPrice(fuel.latest_price)}/ลิตร`;
+      countUp(fuelTile.querySelector(".value"), fuel.latest_price, { format: (v) => `${bahtPrice(v)}/ลิตร` });
       const yoy = yoyPct(fuel);
       if (yoy !== null) fuelTile.querySelector(".sub").replaceWith(deltaNode(yoy, "% จากปีก่อน"));
     }
@@ -462,7 +515,8 @@
     points.forEach((p, i) => {
       const x = i * (bw + gap), v = p.yoy;
       const h = Math.max(1.5, (Math.abs(v) / span) * plot);
-      svgEl("rect", { x, y: v >= 0 ? zero - h : zero, width: bw, height: h, rx: 3, fill: cssVar(v >= 0 ? "--up" : "--down"), opacity: i === n - 1 ? 1 : 0.55 }, svg);
+      const bar = svgEl("rect", { x, y: v >= 0 ? zero - h : zero, width: bw, height: h, rx: 3, fill: cssVar(v >= 0 ? "--up" : "--down"), opacity: i === n - 1 ? 1 : 0.55, class: `yoy-bar ${v >= 0 ? "pos" : "neg"}` }, svg);
+      bar.style.animationDelay = `${i * 45}ms`;
       const hit = svgEl("rect", { x, y: 0, width: bw + gap, height: plot, fill: "transparent" }, svg);
       hit.addEventListener("pointermove", (event) => Charts.showTooltip(event, thMonth(p.period), [{ label: "จากปีก่อน", value: pct(v), color: cssVar(v >= 0 ? "--up" : "--down") }]));
       hit.addEventListener("pointerleave", Charts.hideTooltip);
@@ -553,8 +607,9 @@
     const top = Math.max(...steps.map(([, v]) => v));
     const box = $("dish-timeline");
     box.replaceChildren();
-    for (const [label, value, kind] of steps) {
+    for (const [index, [label, value, kind]] of steps.entries()) {
       const step = el("div", `step ${kind}`.trim());
+      step.style.setProperty("--delay", `${index * 140 + (kind === "ai" ? 200 : 0)}ms`);
       const bar = el("div", "step-bar");
       bar.style.height = `calc((100% - 72px) * ${(value / top).toFixed(3)})`;
       step.append(el("span", "step-value", num(value, 2)), bar, el("span", "step-label", label));
@@ -715,7 +770,9 @@
     card.replaceChildren();
     if (!fc) { card.hidden = true; return; }
     const value = el("div", "ai-value", `ของโดยรวมจะ${fc.predicted_change_pct >= 0 ? "แพงขึ้นอีก" : "ถูกลง"} `);
-    value.appendChild(el("b", "", `${num(Math.abs(fc.predicted_change_pct), 2)}%`));
+    const aiPct = el("b");
+    value.appendChild(aiPct);
+    countUp(aiPct, Math.abs(fc.predicted_change_pct), { format: (v) => `${num(v, 2)}%`, duration: 1400 });
     const rows = el("div", "ai-rows");
     for (const [id, name] of [["P11028", "ไข่ไก่ เบอร์ 3"], ["P11003", "หมูสะโพก"], ["F52002", "แก๊สโซฮอล์ 95"]]) {
       const product = products.find((p) => p.product_id === id);
@@ -728,7 +785,7 @@
     }
     const link = withIcon(el("a", "ai-link", "ดูว่า AI ทายแม่นแค่ไหน"), "arrow");
     link.href = "#forecast";
-    card.append(withIcon(el("div", "ai-label", `AI ทายเดือน ${thMonth(fc.target_period)}`), "sparkle"), value, rows, link);
+    card.append(aiLabel(`AI ทายเดือน ${thMonth(fc.target_period)}`), value, rows, link);
   }
 
   // ---------- หน้า 3: เดือนหน้าเป็นไง (เฉพาะหมวดที่มีราคาจริงเป็นบาท) ----------
@@ -804,7 +861,7 @@
     big.append(el("b", "", num(predicted, predicted >= 1000 ? 0 : 2)), el("span", "", `฿${perUnit(product.unit)}`));
     const move = el("div", "badge-change", `${change > 0.005 ? "▲" : change < -0.005 ? "▼" : "●"} ${moveText(change)} จาก ${thMonth(product.base_period)} (${bahtPrice(product.base_month_price)})`);
     move.style.color = changeColor(change);
-    badge.append(withIcon(el("div", "ai-label", `AI ทายราคาเฉลี่ย ${thMonth(product.target_period)}`), "sparkle"), big, move);
+    badge.append(aiLabel(`AI ทายราคาเฉลี่ย ${thMonth(product.target_period)}`), big, move);
     if (product.target_month_actual) {
       const actual = el("div", "badge-actual", `ราคาจริง ${thMonth(product.target_period)} ถึงตอนนี้ (${product.target_month_days} วันที่สำรวจ) ≈ `);
       actual.appendChild(el("b", "", bahtPrice(product.target_month_actual)));
@@ -818,13 +875,21 @@
     if (!fcCurrent) return;
     button.disabled = true;
     button.textContent = "AI กำลังคิด…";
+    const number = $("fc-badge").querySelector(".badge-big b");
+    const stopShuffle = number ? shuffleDigits(number) : () => {};
     try {
-      const p = await api("/api/predict", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area_key: "region:10", commodity_code: fcCurrent.cpi_code }),
-      });
+      const [p] = await Promise.all([
+        api("/api/predict", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ area_key: "region:10", commodity_code: fcCurrent.cpi_code }),
+        }),
+        sleep(reduceMotion ? 0 : 900),
+      ]);
+      stopShuffle();
       renderForecastBadge(fcCurrent, p.predicted_change_pct, "ทายใหม่เมื่อสักครู่");
+      $("fc-badge").querySelector(".badge-big")?.classList.add("settled");
     } catch (error) {
+      stopShuffle();
       $("fc-badge").replaceChildren(el("div", "muted", `ทายไม่ได้: ${error.message}`));
     } finally {
       button.disabled = false;
@@ -1091,6 +1156,7 @@
     renderLongrun();
   });
   hydrate();
+  prepareReveal();
   window.addEventListener("hashchange", route);
   summaryP().then((s) => {
     if (location.hash && location.hash !== "#overview") {

@@ -23,6 +23,23 @@
     return node;
   };
   const monthLabel = (date) => `${TH_MONTHS[date.getMonth()]} ${date.getFullYear() + 543}`;
+  // ผู้ใช้ที่ตั้งค่า "ลดการเคลื่อนไหว" ไว้ จะไม่เห็นอนิเมชัน
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ขยายความกว้างของกรอบตัด (clip) จากซ้ายไปขวา ทำให้เส้นกราฟดูเหมือนค่อย ๆ วาด
+  function revealWidth(rect, from, to, duration = 900) {
+    const start = performance.now();
+    let done = false;
+    const step = (now) => {
+      if (done) return;
+      const t = Math.min(1, (now - start) / duration);
+      rect.setAttribute("width", from + (to - from) * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(step); else done = true;
+    };
+    requestAnimationFrame(step);
+    // ถ้าเบราว์เซอร์พักอนิเมชัน (แท็บเบื้องหลัง) ให้แสดงกราฟเต็มเมื่อครบเวลา
+    setTimeout(() => { if (!done) { done = true; rect.setAttribute("width", to); } }, duration + 100);
+  }
 
   // พื้นไล่สีจางใต้เส้น (สีเดียวกับเส้น ทึบด้านบน จางลงจนโปร่งที่ฐาน)
   let gradientCounter = 0;
@@ -115,10 +132,10 @@
     if (container._observer) container._observer.disconnect();
     // วาดทันทีหนึ่งครั้ง ไม่ต้องรอ ResizeObserver (ซึ่งทำงานเฉพาะตอนเบราว์เซอร์วาดเฟรม)
     let lastWidth = container.clientWidth || 720;
-    draw(lastWidth);
+    draw(lastWidth, true);
     const observer = new ResizeObserver(() => {
       const width = container.clientWidth;
-      if (width && Math.abs(width - lastWidth) > 2) { lastWidth = width; draw(width); }
+      if (width && Math.abs(width - lastWidth) > 2) { lastWidth = width; draw(width, false); }
     });
     observer.observe(container);
     container._observer = observer;
@@ -157,7 +174,7 @@
     const holder = el("div");
     container.appendChild(holder);
 
-    const draw = (width) => {
+    const draw = (width, firstDraw) => {
       holder.replaceChildren();
       const useEndLabels = options.endLabels !== false && series.length <= 4 && width > 520;
       const margin = { top: 12, right: useEndLabels ? 116 : 18, bottom: 28, left: 46 };
@@ -187,18 +204,29 @@
         const label = svgEl("text", { x: sx(tick.time), y: height - 8, "text-anchor": "middle", class: "axis-text" }, svg);
         label.textContent = tick.label;
       }
+      // เส้นทึบวาดจากซ้ายไปขวาในกรอบตัด ส่วนเส้นประ (ค่าที่ AI ทาย) ค่อยโผล่หลังเส้นจริงวาดเสร็จ
+      const animate = firstDraw && options.animate !== false && !reduceMotion && !document.hidden;
+      let plot = svg;
+      if (animate) {
+        const clipId = `clip-${++gradientCounter}`;
+        const clip = svgEl("clipPath", { id: clipId }, svgEl("defs", {}, svg));
+        const rect = svgEl("rect", { x: 0, y: 0, width: margin.left, height }, clip);
+        plot = svgEl("g", { "clip-path": `url(#${clipId})` }, svg);
+        revealWidth(rect, margin.left, width);
+      }
       if (band.length) {
         const upper = band.map((p, i) => `${i ? "L" : "M"}${sx(p[0].getTime()).toFixed(1)},${sy(p[2]).toFixed(1)}`).join("");
         const lower = [...band].reverse().map((p) => `L${sx(p[0].getTime()).toFixed(1)},${sy(p[1]).toFixed(1)}`).join("");
-        svgEl("path", { d: `${upper}${lower}Z`, fill: options.band.color, "fill-opacity": 0.16, stroke: "none" }, svg);
+        svgEl("path", { d: `${upper}${lower}Z`, fill: options.band.color, "fill-opacity": 0.16, stroke: "none" }, plot);
       }
       // เส้นข้อมูล
       const endLabels = [];
       for (const s of series) {
         const pts = s.points.filter((p) => p[1] !== null && Number.isFinite(p[1]));
+        const layer = animate && s.dashed ? svgEl("g", { class: "late-in" }, svg) : plot;
         if (s.dotsOnly) {
           for (const p of pts) {
-            svgEl("circle", { cx: sx(p[0].getTime()), cy: sy(p[1]), r: 4, fill: s.color, stroke: cssVar("--surface"), "stroke-width": 2 }, svg);
+            svgEl("circle", { cx: sx(p[0].getTime()), cy: sy(p[1]), r: 4, fill: s.color, stroke: cssVar("--surface"), "stroke-width": 2 }, layer);
           }
           continue;
         }
@@ -206,15 +234,15 @@
         if (s.area && pts.length > 1) {
           const baseY = (margin.top + innerH).toFixed(1);
           const area = `${d}L${sx(pts[pts.length - 1][0].getTime()).toFixed(1)},${baseY}L${sx(pts[0][0].getTime()).toFixed(1)},${baseY}Z`;
-          svgEl("path", { d: area, fill: areaGradient(svg, s.color, s.areaOpacity || 0.18), stroke: "none" }, svg);
+          svgEl("path", { d: area, fill: areaGradient(svg, s.color, s.areaOpacity || 0.18), stroke: "none" }, layer);
         }
         svgEl("path", {
           d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round",
           ...(s.dashed ? { "stroke-dasharray": "5 4" } : {}),
-        }, svg);
+        }, layer);
         const last = pts[pts.length - 1];
         if (last && s.endDot !== false) {
-          svgEl("circle", { cx: sx(last[0].getTime()), cy: sy(last[1]), r: 4, fill: s.color, stroke: cssVar("--surface"), "stroke-width": 2 }, svg);
+          svgEl("circle", { cx: sx(last[0].getTime()), cy: sy(last[1]), r: 4, fill: s.color, stroke: cssVar("--surface"), "stroke-width": 2 }, layer);
         }
         if (last && useEndLabels && s.endLabel !== false) endLabels.push({ y: sy(last[1]), x: sx(last[0].getTime()), text: `${s.short || s.name} ${format(last[1])}` });
       }
@@ -223,7 +251,7 @@
       let lastY = -Infinity;
       for (const item of endLabels) {
         if (item.y - lastY < 15) continue;
-        const label = svgEl("text", { x: item.x + 9, y: item.y + 4, class: "end-label" }, svg);
+        const label = svgEl("text", { x: item.x + 9, y: item.y + 4, class: animate ? "end-label late-in" : "end-label" }, svg);
         label.textContent = item.text;
         lastY = item.y;
       }
@@ -274,7 +302,7 @@
     const offset = minV < 0 ? 14 : 2, usable = minV < 0 ? 72 : 82; // เผื่อที่ให้ตัวเลขปลายแท่ง
     const x = (v) => offset + ((v - minV) / span) * usable;
     const list = el("div", "bars");
-    for (const item of items) {
+    for (const [index, item] of items.entries()) {
       const row = el("div", "bar-row");
       row.tabIndex = 0;
       const label = el("div", "bar-label", item.label);
@@ -287,6 +315,7 @@
       bar.style.left = `${Math.min(x(0), x(item.value))}%`;
       bar.style.width = `${Math.max(0.4, Math.abs(x(item.value) - x(0)))}%`;
       bar.style.background = item.color || cssVar(positive ? "--div-pos-2" : "--div-neg-2");
+      bar.style.animationDelay = `${Math.min(index, 15) * 50}ms`;
       const value = el("div", "bar-value", format(item.value));
       if (positive) value.style.left = `calc(${x(item.value)}% + 6px)`;
       else value.style.right = `calc(${100 - x(item.value)}% + 6px)`;
@@ -396,5 +425,5 @@
     svgEl("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round", "vector-effect": "non-scaling-stroke" }, svg);
   }
 
-  window.Charts = { line, bars, map, sparkline, legend, divergingColor, divergingLegend, showTooltip, hideTooltip, cssVar, monthLabel, niceStep };
+  window.Charts = { reduceMotion, line, bars, map, sparkline, legend, divergingColor, divergingLegend, showTooltip, hideTooltip, cssVar, monthLabel, niceStep };
 })();
