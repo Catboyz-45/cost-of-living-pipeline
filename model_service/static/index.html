@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>ค่าครองชีพไทย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css?v=17">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div>
+        <strong>ค่าครองชีพไทย</strong>
+        <small>Thai Cost of Living</small>
+      </div>
+    </div>
+    <nav class="nav" aria-label="หน้า dashboard">
+      <a href="#overview" data-page="overview" data-icon="home">ของแพงขึ้นแค่ไหน</a>
+      <a href="#map" data-page="map" data-icon="map">จังหวัดไหนแพงเร็ว</a>
+      <a href="#forecast" data-page="forecast" data-icon="sparkle">เดือนหน้าเป็นไง</a>
+      <a href="#wage" data-page="wage" data-icon="wallet">ค่าแรงพอไหม</a>
+      <span class="nav-label">สำหรับผู้สนใจด้านเทคนิค</span>
+      <a href="#data" data-page="data" data-icon="database">เบื้องหลังระบบ</a>
+    </nav>
+    <div class="sidebar-foot" id="freshness">กำลังโหลด…</div>
+  </aside>
+
+  <main class="main">
+    <!-- 1. ของแพงขึ้นแค่ไหน -->
+    <section class="page tone-blue" id="page-overview">
+      <header class="page-head" data-icon="home">
+        <span class="eyebrow" data-icon="home">ข้อมูลถึง <b data-latest>…</b></span>
+        <h1>ของแพงขึ้นแค่ไหน</h1>
+        <p class="takeaway" id="overview-takeaway">กำลังสรุปข้อมูล…</p>
+      </header>
+      <div class="hero-row">
+        <article class="card hero tone-blue" id="hero"></article>
+        <div class="tiles" id="overview-tiles"></div>
+      </div>
+
+      <article class="card" id="price-explorer">
+        <div class="card-head">
+          <div>
+            <h2 data-icon="basket">ราคาของกินวันนี้
+              <button type="button" class="info" data-tip="ราคาจริงที่กรมการค้าภายในเดินสำรวจในตลาดกรุงเทพฯ ทุกวันทำการ ราคาของวัน = กึ่งกลางระหว่างราคาต่ำสุดและสูงสุดที่สำรวจได้" aria-label="อธิบาย">i</button>
+            </h2>
+            <p class="muted" id="price-count">ราคาจริงจากกรมการค้าภายใน</p>
+          </div>
+        </div>
+        <div class="filters">
+          <label>ค้นหา <input id="price-search" type="search" placeholder="เช่น ไข่ หมู คะน้า ข้าว" autocomplete="off"></label>
+          <div class="chips chips-wrap" id="price-groups" role="group" aria-label="กลุ่มสินค้า"></div>
+        </div>
+        <div class="price-grid" id="price-grid"></div>
+        <div class="more-row"><button id="price-more" hidden>แสดงเพิ่ม</button></div>
+      </article>
+
+      <article class="card" id="price-detail">
+        <div class="card-head">
+          <div><h2 id="price-title" data-icon="chart">ราคาย้อนหลัง</h2><p class="muted">เส้น = ราคาเฉลี่ยของแต่ละเดือน · แถบจาง = ถูกสุดถึงแพงสุดในเดือนนั้น · กดการ์ดสินค้าด้านบนเพื่อเปลี่ยน</p></div>
+          <div class="forecast-badge" id="price-badge"></div>
+        </div>
+        <div class="chart" id="chart-price"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2 data-icon="layers">ค่าใช้จ่ายเรื่องไหนแพงขึ้นมากที่สุด</h2>
+            <p class="muted" id="category-sub">เทียบกับเดือนเดียวกันของปีก่อน</p>
+          </div>
+        </div>
+        <div id="chart-categories"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2 data-icon="chart">ย้อนดูหลายปี: ของแพงขึ้นไปเท่าไหร่แล้ว
+              <button type="button" class="info" data-tip="กราฟนี้ใช้ดัชนีราคาจาก สนค. ตั้งปี 2566 = 100 ถ้าเส้นอยู่ที่ 105 แปลว่าแพงกว่าปี 2566 อยู่ 5% ถ้าอยู่ที่ 80 แปลว่าตอนนั้นถูกกว่าปี 2566 อยู่ 20%" aria-label="อธิบาย">i</button>
+            </h2>
+            <p class="muted">100 = ระดับราคาปี 2566 · สูงกว่า 100 = แพงกว่าปี 2566</p>
+          </div>
+          <div class="chips" id="range-chips" role="group" aria-label="ช่วงเวลา">
+            <button data-years="5">5 ปี</button>
+            <button data-years="10" class="active">10 ปี</button>
+            <button data-years="20">20 ปี</button>
+            <button data-years="60">ทั้งหมด</button>
+          </div>
+        </div>
+        <div class="chart" id="chart-longrun"></div>
+      </article>
+    </section>
+
+    <!-- 2. จังหวัดไหนแพงเร็ว -->
+    <section class="page tone-pink" id="page-map" hidden>
+      <header class="page-head" data-icon="map">
+        <span class="eyebrow" data-icon="map">77 จังหวัด</span>
+        <h1>จังหวัดไหนของแพงขึ้นเร็วที่สุด</h1>
+        <p class="takeaway" id="map-takeaway">กำลังสรุปข้อมูล…</p>
+      </header>
+      <div class="filters">
+        <label>ดูเรื่อง <select id="map-commodity"></select></label>
+        <button type="button" class="info info-inline" data-tip="เทียบได้ว่าจังหวัดไหน &quot;แพงขึ้นเร็ว&quot; กว่ากัน แต่บอกไม่ได้ว่าจังหวัดไหนของแพงกว่ากัน เพราะแต่ละจังหวัดวัดเทียบกับราคาปี 2566 ของตัวเอง · กรุงเทพฯ ใช้ตัวเลขรวมกับปริมณฑล เพราะ สนค. ไม่แยกกรุงเทพฯ" aria-label="อธิบาย">i</button>
+      </div>
+      <div class="map-layout">
+        <article class="card map-card">
+          <div class="map" id="map"></div>
+          <div class="legend-scale" id="map-legend"></div>
+        </article>
+        <div class="map-side">
+          <article class="card" id="map-detail"></article>
+          <article class="card">
+            <h2 data-icon="list">เรียงจากแพงขึ้นเร็วที่สุด</h2>
+            <div class="table-wrap"><table class="table" id="map-table"></table></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. เดือนหน้าเป็นไง -->
+    <section class="page tone-purple" id="page-forecast" hidden>
+      <header class="page-head" data-icon="sparkle">
+        <span class="eyebrow" data-icon="sparkle">คาดการณ์ด้วย AI</span>
+        <h1>เดือนหน้าของจะแพงขึ้นไหม</h1>
+        <p class="takeaway" id="fc-takeaway">กำลังสรุปข้อมูล…</p>
+      </header>
+      <div class="filters">
+        <label>พื้นที่ <select id="fc-area"></select></label>
+        <label>ดูเรื่อง <select id="fc-commodity"></select></label>
+        <button class="primary" id="fc-live">ให้โมเดลทายใหม่ตอนนี้</button>
+      </div>
+      <article class="card">
+        <h2 data-icon="basket">ราคาของกินเดือนหน้า (ประมาณ)
+          <button type="button" class="info" data-tip="ราคาคาดการณ์ = ราคาจริงล่าสุด × % ที่โมเดลคาดว่าหมวดของสินค้านั้นจะเปลี่ยน (ของกรุงเทพฯ และปริมณฑล เพราะราคาสำรวจในตลาดกรุงเทพฯ) เป็นค่าประมาณ ไม่ใช่ราคาที่ประกาศ" aria-label="อธิบาย">i</button>
+        </h2>
+        <p class="muted" id="fc-products-sub">ราคาจริงวันนี้ → ราคาที่คาดเดือนหน้า</p>
+        <div class="product-forecast" id="fc-products"></div>
+      </article>
+      <article class="card">
+        <div class="card-head">
+          <div><h2 id="fc-title" data-icon="trend">แนวโน้มราคา</h2><p class="muted">100 = ระดับราคาปี 2566 · เส้นประ = ที่โมเดลทายไว้สำหรับเดือนถัดไป</p></div>
+          <div class="forecast-badge" id="fc-badge"></div>
+        </div>
+        <div class="chart" id="chart-forecast"></div>
+      </article>
+      <div class="grid-2">
+        <article class="card"><h2 data-icon="arrowUp">คาดว่าจะแพงขึ้นมากสุด</h2><p class="muted" id="fc-top-sub">ทั้งประเทศ</p><div id="fc-rising"></div></article>
+        <article class="card"><h2 data-icon="arrowDown">คาดว่าจะถูกลงมากสุด</h2><p class="muted">ทั้งประเทศ</p><div id="fc-falling"></div></article>
+      </div>
+      <p class="note" id="fc-accuracy"></p>
+    </section>
+
+    <!-- 4. ค่าแรงพอไหม -->
+    <section class="page tone-green" id="page-wage" hidden>
+      <header class="page-head" data-icon="wallet">
+        <span class="eyebrow" data-icon="wallet">ค่าแรงขั้นต่ำ 77 จังหวัด</span>
+        <h1>ค่าแรงขั้นต่ำพอกินไหม</h1>
+        <p class="takeaway" id="wage-takeaway">กำลังสรุปข้อมูล…</p>
+      </header>
+      <div class="filters">
+        <label>จังหวัด <select id="wage-province"></select></label>
+      </div>
+      <div class="tiles tiles-4" id="wage-tiles"></div>
+      <article class="card">
+        <h2 data-icon="basket">ค่าแรง 1 วัน ซื้ออะไรได้บ้าง</h2>
+        <p class="muted" id="buy-sub">คิดจากราคาจริงวันนี้ที่ตลาดกรุงเทพฯ</p>
+        <div class="buy-list" id="buy-list"></div>
+      </article>
+      <article class="card">
+        <h2 id="wage-title" data-icon="scale">ค่าแรงขึ้นทันของแพงไหม
+          <button type="button" class="info" data-tip="เส้นส้ม = ค่าแรงตามประกาศ · เส้นฟ้า = ค่าแรงเมื่อหักผลของของแพงออกแล้ว บอกว่าค่าแรงวันนั้นซื้อของได้เท่ากับเงินกี่บาทในปี 2566 ถ้าเส้นฟ้าลดลง แปลว่าของแพงขึ้นเร็วกว่าค่าแรง" aria-label="อธิบาย">i</button>
+        </h2>
+        <p class="muted">ถ้าเส้นฟ้าลดลง แปลว่าของแพงขึ้นเร็วกว่าค่าแรง</p>
+        <div class="chart" id="chart-wage"></div>
+      </article>
+      <article class="card">
+        <h2 data-icon="list">ทุกจังหวัด</h2>
+        <p class="muted" id="wage-table-sub"></p>
+        <div class="table-wrap"><table class="table" id="wage-table"></table></div>
+      </article>
+    </section>
+
+    <!-- 5. เบื้องหลังระบบ -->
+    <section class="page tone-teal" id="page-data" hidden>
+      <header class="page-head" data-icon="database">
+        <span class="eyebrow" data-icon="database">Data Pipeline · Apache Airflow · Machine Learning</span>
+        <h1>ระบบนี้ทำงานยังไง</h1>
+        <p>ทุกตัวเลขในเว็บนี้มาจาก PostgreSQL ที่ Apache Airflow ดึงจากหน่วยงานรัฐ ตรวจคุณภาพ แปลงข้อมูล และเทรนโมเดลให้อัตโนมัติทุกเดือน</p>
+      </header>
+      <article class="card">
+        <h2 data-icon="layers">ขั้นตอนของ Pipeline</h2>
+        <p class="muted">DAG <code>thai_cost_of_living_monthly</code> รันวันที่ 10 ของทุกเดือน · DAG <code>thai_cost_of_living_backfill</code> ใช้ดึงย้อนหลังครั้งแรก</p>
+        <ol class="flow" id="flow"></ol>
+      </article>
+      <div class="tiles tiles-4" id="data-tiles"></div>
+      <div class="grid-2">
+        <article class="card"><h2 data-icon="database">จำนวนแถวในแต่ละตาราง</h2><div id="table-counts"></div></article>
+        <article class="card"><h2 data-icon="clock">โหลดล่าสุดของแต่ละแหล่ง</h2><div class="table-wrap"><table class="table" id="load-table"></table></div></article>
+      </div>
+      <article class="card">
+        <h2 data-icon="target">โมเดลแม่นแค่ไหน</h2>
+        <p class="muted">HistGradientBoostingRegressor ทำนาย % เปลี่ยนแปลงของดัชนีเดือนถัดไป · ทดสอบกับ 12 เดือนล่าสุดที่โมเดลไม่เคยเห็น เทียบกับ baseline ที่เดาว่า "ราคาเท่าเดิม" · Deploy เฉพาะเมื่อดีกว่า baseline และโมเดลเดิม (Champion/Challenger)</p>
+        <div class="tiles tiles-4" id="model-tiles"></div>
+        <div class="table-wrap"><table class="table" id="model-table"></table></div>
+      </article>
+      <article class="card">
+        <h2 data-icon="link">ราคาหน้าฟาร์มกับราคาขายปลีก</h2>
+        <p class="muted">Pearson correlation ของ % เปลี่ยนแปลงรายเดือน (lag = ราคาฟาร์มนำหน้ากี่เดือน) · ความสัมพันธ์ไม่ใช่เหตุและผล</p>
+        <div id="farm-corr"></div>
+      </article>
+      <article class="card sources">
+        <h2 data-icon="book">แหล่งข้อมูล</h2>
+        <ul>
+          <li><b>ดัชนีราคาผู้บริโภค</b> ทั้งประเทศ 5 ภาค และ 76 จังหวัด (สนค. ไม่เผยแพร่ดัชนีของกรุงเทพฯ แยกเดี่ยว จึงใช้ดัชนี "กรุงเทพฯ และปริมณฑล" แทน รวมเป็น 77) — สำนักงานนโยบายและยุทธศาสตร์การค้า (สนค.) <a href="https://index.tpso.go.th/document/cpig/post-month" target="_blank" rel="noopener">TPSO Open API</a></li>
+          <li><b>ราคาขายปลีกรายวัน 283 สินค้า</b> — กรมการค้าภายใน ดึงด้วย web scraping จากหน้าค้นหาราคา <a href="https://data.moc.go.th/OpenData/GISProductPrice" target="_blank" rel="noopener">MOC Open Data</a> (สำรองด้วย API)</li>
+          <li><b>ค่าจ้างขั้นต่ำ</b> — สำนักงานปลัดกระทรวงแรงงาน (data.go.th) และประกาศคณะกรรมการค่าจ้าง ฉบับที่ 9, 11–14 (<a href="https://www.mol.go.th/อัตราค่าจ้างขั้นต่ำ" target="_blank" rel="noopener">mol.go.th</a>)</li>
+          <li><b>ราคาสินค้าปศุสัตว์หน้าฟาร์ม</b> — กรมปศุสัตว์ (data.go.th)</li>
+          <li><b>ขอบเขตจังหวัด</b> — <a href="https://github.com/chingchai/OpenGISData-Thailand" target="_blank" rel="noopener">OpenGISData-Thailand</a> (ย่อจุดให้เล็กลง)</li>
+        </ul>
+        <p class="muted">Airflow UI: <a href="http://localhost:8080" target="_blank" rel="noopener">localhost:8080</a> · API docs: <a href="/docs" target="_blank">/docs</a> · ไฟล์สำหรับ Power BI อยู่ในโฟลเดอร์ <code>exports/</code></p>
+      </article>
+    </section>
+  </main>
+</div>
+<div class="tooltip" id="tooltip" role="status" hidden></div>
+<script src="/static/icons.js?v=17"></script>
+<script src="/static/charts.js?v=17"></script>
+<script src="/static/app.js?v=17"></script>
+</body>
+</html>

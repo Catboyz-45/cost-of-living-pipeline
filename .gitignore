@@ -1,0 +1,20 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# ไฟล์ที่ Airflow และ ML สร้างระหว่างการทำงาน ไม่ควรส่งขึ้น Git
+logs/*
+!logs/.gitkeep
+models/*
+!models/.gitkeep
+# Bronze layer (response ดิบจาก API) และไฟล์ CSV ที่ export ให้ Power BI สร้างใหม่ได้เสมอ
+data/raw/
+exports/*
+!exports/.gitkeep
+
+# เก็บค่าตั้งต้นของแต่ละเครื่องเป็นส่วนตัว แต่อนุญาตไฟล์ตัวอย่าง
+.env
+!.env.example

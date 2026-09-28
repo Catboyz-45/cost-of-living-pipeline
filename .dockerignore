@@ -1,0 +1,11 @@
+# build context ของ model_api คือ root ของโปรเจกต์ (เพื่อ copy col_08_features.py)
+# ตัดไฟล์ใหญ่ที่ไม่เกี่ยวข้องออก ให้ build เร็วและ image ไม่พองโดยไม่จำเป็น
+.git
+logs
+data
+exports
+models
+config
+plugins
+**/__pycache__
+.env

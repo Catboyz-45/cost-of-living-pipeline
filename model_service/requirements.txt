@@ -1,0 +1,18 @@
+# เว็บ API และ production ASGI server
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+
+# โหลดและเรียกใช้โมเดลที่ Airflow สร้าง
+# version ต้องตรงกับใน airflow_worker ทุกตัว ไม่เช่นนั้นไฟล์ .pkl จะโหลดไม่ได้
+# (ตรวจด้วย: docker exec airflow_worker python -m pip freeze)
+scikit-learn==1.5.2
+joblib==1.4.2
+numpy==2.5.3
+scipy==1.18.1
+pandas==2.2.3
+# Airflow ใช้ dill และบางครั้งไฟล์ที่ pickle ใน task อ้างถึง dill จึงต้องมีฝั่ง API ด้วย
+dill==0.3.9
+
+# อ่านข้อมูลดัชนีและผลพยากรณ์จาก PostgreSQL ปลายทาง
+psycopg2-binary==2.9.10
