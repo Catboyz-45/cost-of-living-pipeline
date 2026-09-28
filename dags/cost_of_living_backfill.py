@@ -22,6 +22,7 @@ from col_03_extract import (
 )
 from col_09_pipeline import build_downstream, build_setup_tasks
 from col_10_scrape import scrape_retail_prices
+from col_11_fuel import extract_fuel_prices
 
 with DAG(
     dag_id="thai_cost_of_living_backfill",
@@ -84,6 +85,8 @@ with DAG(
             *scrape_tasks,
             PythonOperator(task_id="farm_prices", python_callable=extract_farm_prices),
             PythonOperator(task_id="minimum_wage", python_callable=extract_minimum_wage),
+            # ราคาน้ำมันรถจริงจาก Web Service ของ ปตท. (SOAP)
+            PythonOperator(task_id="fuel_prices", python_callable=extract_fuel_prices, execution_timeout=timedelta(hours=1)),
         ]
 
     create_tables >> extract_group

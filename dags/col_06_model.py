@@ -315,10 +315,49 @@ def generate_forecasts(**_: Any) -> dict[str, Any]:
         ["area_type", "area_code", "commodity_code", "target_period"],
         rows,
     )
+    backtest_rows = _backtest_champion(artifact, hook)
     result = {
         "base_period": latest.isoformat(),
         "target_period": target_period.isoformat(),
         "series_forecasted": len(rows),
+        "backtest_rows": backtest_rows,
     }
     print(f"Forecasts saved: {result}")
     return result
+
+
+def _backtest_champion(artifact: dict[str, Any], hook: PostgresHook) -> int:
+    """ให้โมเดลที่ใช้งานจริงทายเดือนหลัง trained_through (ช่วงที่ไม่เคยเห็นตอนเทรน)
+    แล้วเก็บคู่ ทายไว้ vs เกิดจริง ของระดับประเทศ/ภาค ไว้แสดงบนเว็บว่า AI แม่นแค่ไหน."""
+    trained_through = date.fromisoformat(artifact["trained_through"])
+    # ต้องมีข้อมูลก่อนหน้า 13 เดือนสำหรับ lag ของเดือนแรกที่ทดสอบ
+    start_year, start_month = shift_month(trained_through.year, trained_through.month, -13)
+    frame = _load_cpi_frame(date(start_year, start_month, 1))
+    frame = frame[frame["area_type"] == "region"]
+    features, _ = build_features(frame, artifact["categories"])
+    unseen = features[
+        (features["period_date"] > pd.Timestamp(trained_through))
+        & complete_rows(features)
+        & features["target"].notna()
+    ]
+    if unseen.empty:
+        print("No unseen months to backtest yet")
+        return 0
+    predicted = artifact["model"].predict(_to_matrix(unseen))
+    rows = []
+    for row, change in zip(unseen.itertuples(index=False), predicted):
+        base = row.period_date.date()
+        target_year, target_month = shift_month(base.year, base.month, 1)
+        rows.append((
+            row.area_type, row.area_code, row.commodity_code, base, date(target_year, target_month, 1),
+            float(change), float(row.target), trained_through,
+        ))
+    # เก็บเฉพาะผลของโมเดลปัจจุบัน ลบของโมเดลเก่าออกก่อน
+    hook.run("DELETE FROM cpi_backtest;")
+    return bulk_upsert(
+        "cpi_backtest",
+        ["area_type", "area_code", "commodity_code", "base_period", "target_period",
+         "predicted_change_pct", "actual_change_pct", "model_trained_through"],
+        ["area_type", "area_code", "commodity_code", "target_period"],
+        rows,
+    )

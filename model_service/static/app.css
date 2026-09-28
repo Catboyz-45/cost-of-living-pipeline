@@ -398,3 +398,29 @@ input[type="search"]:focus { outline: none; border-color: var(--accent); box-sha
   .hero .value { font-size: 2.2rem; }
   .takeaway { font-size: .95rem; }
 }
+
+/* ---------- แถบ AI บนหน้าแรก ---------- */
+.ai-banner {
+  display: flex; align-items: center; gap: 16px; text-decoration: none; color: var(--ink);
+  background: linear-gradient(115deg, var(--tone-wash) 0%, #ffffff 80%); border-color: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 25%, transparent);
+  transition: transform .15s ease;
+}
+.ai-banner:hover { transform: translateY(-2px); }
+.ai-banner .icon-plate { width: 48px; height: 48px; background: #ffffff; }
+.ai-banner .icon-plate::after { inset: 12px; }
+.ai-body { flex: 1; min-width: 0; }
+.ai-label { font-size: .85rem; color: var(--tone); font-weight: 600; }
+.ai-value { font-size: 1.6rem; letter-spacing: -.4px; margin: 2px 0 8px; }
+.ai-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-chip { background: #ffffff; border-radius: 100px; padding: 4px 12px; font-size: .84rem; color: var(--ink-2); }
+.ai-chip b { color: var(--ink); font-family: var(--mono); font-weight: 500; }
+.ai-cta { color: var(--tone); font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.tiles-3 { grid-template-columns: repeat(3, 1fr); margin: 14px 0; }
+.forecast-badge .big .per { font-size: .9rem; margin-left: 4px; }
+@media (max-width: 760px) {
+  .ai-banner { flex-wrap: wrap; }
+  .ai-cta { width: 100%; }
+  .ai-value { font-size: 1.3rem; }
+  .tiles-3 { grid-template-columns: 1fr; }
+}

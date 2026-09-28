@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css?v=17">
+<link rel="stylesheet" href="/static/app.css?v=19">
 </head>
 <body>
 <div class="app">
@@ -39,6 +39,7 @@
         <h1>ของแพงขึ้นแค่ไหน</h1>
         <p class="takeaway" id="overview-takeaway">กำลังสรุปข้อมูล…</p>
       </header>
+      <a class="card ai-banner tone-purple" id="ai-banner" href="#forecast"></a>
       <div class="hero-row">
         <article class="card hero tone-blue" id="hero"></article>
         <div class="tiles" id="overview-tiles"></div>
@@ -127,32 +128,38 @@
     <!-- 3. เดือนหน้าเป็นไง -->
     <section class="page tone-purple" id="page-forecast" hidden>
       <header class="page-head" data-icon="sparkle">
-        <span class="eyebrow" data-icon="sparkle">คาดการณ์ด้วย AI</span>
+        <span class="eyebrow" data-icon="sparkle">AI ทายราคา · ราคาจริงเป็นบาท</span>
         <h1>เดือนหน้าของจะแพงขึ้นไหม</h1>
         <p class="takeaway" id="fc-takeaway">กำลังสรุปข้อมูล…</p>
       </header>
       <div class="filters">
-        <label>พื้นที่ <select id="fc-area"></select></label>
-        <label>ดูเรื่อง <select id="fc-commodity"></select></label>
-        <button class="primary" id="fc-live">ให้โมเดลทายใหม่ตอนนี้</button>
+        <div class="chips chips-wrap" id="fc-categories" role="group" aria-label="หมวดสินค้า"></div>
+      </div>
+      <div class="filters">
+        <label>สินค้า <select id="fc-product"></select></label>
+        <button class="primary" id="fc-live">ให้ AI ทายใหม่ตอนนี้</button>
       </div>
       <article class="card">
-        <h2 data-icon="basket">ราคาของกินเดือนหน้า (ประมาณ)
-          <button type="button" class="info" data-tip="ราคาคาดการณ์ = ราคาจริงล่าสุด × % ที่โมเดลคาดว่าหมวดของสินค้านั้นจะเปลี่ยน (ของกรุงเทพฯ และปริมณฑล เพราะราคาสำรวจในตลาดกรุงเทพฯ) เป็นค่าประมาณ ไม่ใช่ราคาที่ประกาศ" aria-label="อธิบาย">i</button>
-        </h2>
-        <p class="muted" id="fc-products-sub">ราคาจริงวันนี้ → ราคาที่คาดเดือนหน้า</p>
-        <div class="product-forecast" id="fc-products"></div>
-      </article>
-      <article class="card">
         <div class="card-head">
-          <div><h2 id="fc-title" data-icon="trend">แนวโน้มราคา</h2><p class="muted">100 = ระดับราคาปี 2566 · เส้นประ = ที่โมเดลทายไว้สำหรับเดือนถัดไป</p></div>
+          <div>
+            <h2 id="fc-title" data-icon="trend">ราคาจริงและที่ AI ทาย</h2>
+            <p class="muted">เส้นทึบ = ราคาจริงเฉลี่ยแต่ละเดือน (ตลาด/ปั๊มในกรุงเทพฯ) · เส้นประ = ที่ AI ทาย</p>
+          </div>
           <div class="forecast-badge" id="fc-badge"></div>
         </div>
         <div class="chart" id="chart-forecast"></div>
       </article>
+      <article class="card">
+        <h2 data-icon="target">AI ทายไว้ vs เกิดขึ้นจริง
+          <button type="button" class="info" data-tip="วิธีทดสอบ: ให้ AI เรียนจากข้อมูลถึงเดือนหนึ่ง แล้วให้ทายเดือนหลังจากนั้นทีละเดือน ซึ่ง AI ไม่เคยเห็นมาก่อน แล้วเทียบกับราคาที่เกิดขึ้นจริง เหมือนเอาไปใช้จริงย้อนหลัง AI ทาย % ของทั้งหมวด (เช่น ไข่ทุกชนิด) จึงอาจพลาดกับสินค้าแต่ละตัวได้" aria-label="อธิบาย">i</button>
+        </h2>
+        <p class="muted" id="fc-bt-sub">ทดสอบกับเดือนที่ AI ไม่เคยเห็นตอนเรียน</p>
+        <div class="tiles tiles-3" id="fc-bt-tiles"></div>
+        <div class="chart" id="chart-backtest"></div>
+      </article>
       <div class="grid-2">
-        <article class="card"><h2 data-icon="arrowUp">คาดว่าจะแพงขึ้นมากสุด</h2><p class="muted" id="fc-top-sub">ทั้งประเทศ</p><div id="fc-rising"></div></article>
-        <article class="card"><h2 data-icon="arrowDown">คาดว่าจะถูกลงมากสุด</h2><p class="muted">ทั้งประเทศ</p><div id="fc-falling"></div></article>
+        <article class="card"><h2 data-icon="arrowUp">AI คาดว่าจะแพงขึ้น</h2><p class="muted" id="fc-rising-sub">ราคาจริงวันนี้ → ที่ AI ทาย</p><div class="product-forecast" id="fc-rising"></div></article>
+        <article class="card"><h2 data-icon="arrowDown">AI คาดว่าจะถูกลง</h2><p class="muted" id="fc-falling-sub">ราคาจริงวันนี้ → ที่ AI ทาย</p><div class="product-forecast" id="fc-falling"></div></article>
       </div>
       <p class="note" id="fc-accuracy"></p>
     </section>
@@ -219,6 +226,7 @@
         <h2 data-icon="book">แหล่งข้อมูล</h2>
         <ul>
           <li><b>ดัชนีราคาผู้บริโภค</b> ทั้งประเทศ 5 ภาค และ 76 จังหวัด (สนค. ไม่เผยแพร่ดัชนีของกรุงเทพฯ แยกเดี่ยว จึงใช้ดัชนี "กรุงเทพฯ และปริมณฑล" แทน รวมเป็น 77) — สำนักงานนโยบายและยุทธศาสตร์การค้า (สนค.) <a href="https://index.tpso.go.th/document/cpig/post-month" target="_blank" rel="noopener">TPSO Open API</a></li>
+          <li><b>ราคาขายปลีกน้ำมันรถรายวัน</b> (ดีเซล แก๊สโซฮอล์ 95/91/E20 กรุงเทพฯ ตั้งแต่ 2565) — Web Service ราคาน้ำมันของ ปตท. (<a href="https://orapiweb.pttor.com/oilservice/OilPrice.asmx" target="_blank" rel="noopener">PTT OilPrice</a>)</li>
           <li><b>ราคาขายปลีกรายวัน 283 สินค้า</b> — กรมการค้าภายใน ดึงด้วย web scraping จากหน้าค้นหาราคา <a href="https://data.moc.go.th/OpenData/GISProductPrice" target="_blank" rel="noopener">MOC Open Data</a> (สำรองด้วย API)</li>
           <li><b>ค่าจ้างขั้นต่ำ</b> — สำนักงานปลัดกระทรวงแรงงาน (data.go.th) และประกาศคณะกรรมการค่าจ้าง ฉบับที่ 9, 11–14 (<a href="https://www.mol.go.th/อัตราค่าจ้างขั้นต่ำ" target="_blank" rel="noopener">mol.go.th</a>)</li>
           <li><b>ราคาสินค้าปศุสัตว์หน้าฟาร์ม</b> — กรมปศุสัตว์ (data.go.th)</li>
@@ -230,8 +238,8 @@
   </main>
 </div>
 <div class="tooltip" id="tooltip" role="status" hidden></div>
-<script src="/static/icons.js?v=17"></script>
-<script src="/static/charts.js?v=17"></script>
-<script src="/static/app.js?v=17"></script>
+<script src="/static/icons.js?v=19"></script>
+<script src="/static/charts.js?v=19"></script>
+<script src="/static/app.js?v=19"></script>
 </body>
 </html>

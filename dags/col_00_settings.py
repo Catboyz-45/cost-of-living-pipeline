@@ -82,6 +82,20 @@ MOC_WEB_STABLE_AFTER_DAYS = 400  # ช่วงเวลาที่จบไป
 # แบ่ง Task ตามกลุ่มรหัสสินค้า ให้ scrape ขนานกัน 3 Task
 # เลือกเฉพาะ "ขายปลีก" (P = อาหารสด/ของแห้ง, R13 = ข้าวสารขายปลีก)
 # R11/R12 เป็นราคาขายส่งต่อ 100 กก. และ W = ขายส่ง จึงไม่ดึง
+# แหล่งข้อมูลที่ 2c: ราคาขายปลีกน้ำมันรถ (กรุงเทพฯ) จาก Web Service ของ ปตท. (SOAP)
+# ข้อมูลย้อนหลังเริ่ม 1 ม.ค. 2565 ขอได้ทีละวัน จึงเก็บ cache รายเดือนไว้ไม่ยิงซ้ำ
+PTT_OIL_URL = "https://orapiweb.pttor.com/oilservice/OilPrice.asmx"
+PTT_OIL_START = "2022-01-01"
+PTT_PAUSE_SECONDS = 0.5
+# ชื่อสินค้าใน Web Service -> (product_id, ชื่อไทย) ทั้งหมดอยู่ในหมวดดัชนี 52200 น้ำมันเชื้อเพลิง
+FUEL_PRODUCTS = {
+    "Diesel": ("F52001", "ดีเซล"),
+    "Gasohol 95": ("F52002", "แก๊สโซฮอล์ 95"),
+    "Gasohol 91": ("F52003", "แก๊สโซฮอล์ 91"),
+    "Gasohol E20": ("F52004", "แก๊สโซฮอล์ E20"),
+}
+FUEL_CPI_CODE = "52200"
+
 MOC_WEB_PRODUCT_GROUPS = {
     "meat_seafood": ("P11", "P12"),
     "vegetables_fruit": ("P13", "P14"),

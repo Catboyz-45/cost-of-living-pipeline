@@ -186,6 +186,19 @@ CREATE INDEX IF NOT EXISTS idx_cpi_metrics_champion
     ON cpi_model_metrics (model_name, deployed, run_at DESC);
 
 -- ผลพยากรณ์เดือนถัดไป: หนึ่งแถวต่อพื้นที่ × หมวดสินค้า × เดือนเป้าหมาย
+-- ผลทดสอบย้อนหลังของโมเดลที่ใช้งานจริง: ทายเดือนที่โมเดลไม่เคยเห็นตอนเทรน เทียบกับค่าจริง
+CREATE TABLE IF NOT EXISTS cpi_backtest (
+    area_type VARCHAR(10) NOT NULL,
+    area_code VARCHAR(4) NOT NULL,
+    commodity_code VARCHAR(10) NOT NULL,
+    base_period DATE NOT NULL,
+    target_period DATE NOT NULL,
+    predicted_change_pct DOUBLE PRECISION NOT NULL,
+    actual_change_pct DOUBLE PRECISION NOT NULL,
+    model_trained_through DATE NOT NULL,
+    PRIMARY KEY (area_type, area_code, commodity_code, target_period)
+);
+
 CREATE TABLE IF NOT EXISTS cpi_forecasts (
     area_type VARCHAR(10) NOT NULL,
     area_code VARCHAR(4) NOT NULL,

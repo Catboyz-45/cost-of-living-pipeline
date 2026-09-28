@@ -129,6 +129,12 @@ EXPORT_QUERIES = {
         WHERE calculated_at = (SELECT MAX(calculated_at) FROM farm_retail_correlation)
         ORDER BY 1, 3
     """,
+    # ทายไว้ vs เกิดจริง ของโมเดลที่ใช้งานจริง (เดือนที่โมเดลไม่เคยเห็นตอนเทรน)
+    "fact_model_backtest.csv": """
+        SELECT area_type || ':' || area_code AS area_key, commodity_code, base_period, target_period,
+               predicted_change_pct, actual_change_pct, model_trained_through
+        FROM cpi_backtest ORDER BY 1, 2, 4
+    """,
     "model_metrics.csv": """
         SELECT run_at, model_name, rmse, mae, r2, baseline_rmse, direction_accuracy,
                training_rows, holdout_rows, deployed

@@ -133,7 +133,9 @@
   // ---------- ราคาของกิน (ราคาจริงจากกรมการค้าภายใน) ----------
   // สินค้าพื้นฐานที่แสดงก่อน: ไข่ไก่เบอร์ 3, หมูเนื้อแดง, ข้าวหอม, คะน้า, ปลาทู, น้ำมันปาล์ม
   const STAPLES = ["P11028", "P11003", "R13001", "P13001", "P12014", "P16011"];
-  const GROUP_LABELS = { "ราคาขายปลีกข้าวสาร": "ข้าวสาร", "พืชน้ำมันและน้ำมันพืช": "น้ำมันพืช" };
+  const GROUP_LABELS = { "ราคาขายปลีกข้าวสาร": "ข้าวสาร", "พืชน้ำมันและน้ำมันพืช": "น้ำมันพืช", "น้ำมันเชื้อเพลิง": "น้ำมันรถ" };
+  // ค่าแรง 1 วันซื้ออะไรได้: ของกินพื้นฐาน + น้ำมันแก๊สโซฮอล์ 95
+  const BUY_ITEMS = [...STAPLES, "F52002"];
   const PAGE_SIZE = 24;
   let selectedProduct = null;
   let priceGroup = "";
@@ -143,6 +145,7 @@
 
   // เลือกไอคอนและโทนสีของการ์ดสินค้าจากชื่อสินค้า
   function productLook(label) {
+    if (/ดีเซล|แก๊สโซฮอล์|เบนซิน/.test(label)) return { icon: "fuel", tone: "blue" };
     if (/ไข่/.test(label)) return { icon: "egg", tone: "amber" };
     if (/ปลา|กุ้ง|หมึก|หอย/.test(label)) return { icon: "fish", tone: "teal" };
     if (/สุกร|หมู|ไก่|เนื้อ|เป็ด|กระบือ/.test(label)) return { icon: "meat", tone: "pink" };
@@ -290,12 +293,7 @@
       label: "ค่าน้ำมัน ไฟ แก๊ส", value: pct(last(energy).yoy), sub: `จากปีก่อน · ของ 100 บาท ตอนนี้ ${num(100 + last(energy).yoy, 2)} บาท`,
       icon: "bolt", tone: "green", spark: (holder) => sparkline(holder, energy.map((p) => p.yoy), { color: cssVar("--series-3"), height: 36, includeZero: true }),
     });
-    const fc = summary.forecast["00000"];
-    tile(tiles, {
-      label: `${fc ? thMonth(fc.target_period) : "เดือนหน้า"} คาดว่าจะ`,
-      value: fc ? moveText(fc.predicted_change_pct) : "–",
-      sub: "จากเดือนก่อน · AI ทายจากข้อมูลย้อนหลัง 20 ปี", icon: "sparkle", tone: "purple",
-    });
+    const fuelTile = tile(tiles, { label: "น้ำมันแก๊สโซฮอล์ 95 วันนี้", value: "–", sub: "ราคาหน้าปั๊ม กรุงเทพฯ (ปตท.)", icon: "fuel", tone: "blue" });
     const wage = summary.bangkok_wage;
     const wageTile = tile(tiles, {
       label: "ค่าแรงขั้นต่ำ กรุงเทพฯ",
@@ -316,6 +314,13 @@
     ]);
     const egg = products.find((p) => p.product_id === "P11028");
     if (wage && egg) wageTile.querySelector(".sub").textContent = `ซื้อไข่ไก่ได้วันละ ${num(wage.latest.nominal_wage / egg.latest_price, 0)} ฟอง`;
+    const fuel = products.find((p) => p.product_id === "F52002");
+    if (fuel) {
+      fuelTile.querySelector(".value").textContent = `${bahtPrice(fuel.latest_price)}/ลิตร`;
+      const yoy = yoyPct(fuel);
+      if (yoy !== null) fuelTile.insertBefore(deltaNode(yoy, "% จากปีก่อน"), fuelTile.querySelector(".sub"));
+    }
+    renderAiBanner(summary.forecast["00000"], products);
 
     // หมวดค่าใช้จ่ายจริงเท่านั้น (ตัดกลุ่มสำหรับนักวิเคราะห์) เรียงจากแพงขึ้นมากสุด
     const everyday = categories.items.filter((item) => isEverydayCategory(item.commodity_code) && item.change_yoy !== null);
@@ -434,87 +439,200 @@
       moneyLine("ของที่ปีก่อนจ่าย ", "100 บาท", " ตอนนี้ต้องจ่าย ", item.yoy === null ? "–" : `${num(100 + item.yoy, 2)} บาท`),
       el("div", "muted", `จากเดือนก่อน ${pct(item.mom)} · เดือนหน้าคาดว่า ${pct(item.predicted_change_pct)}`),
     );
-    const link = el("button", "", "ดูแนวโน้มและคาดการณ์ของจังหวัดนี้ →");
-    link.style.marginTop = "12px";
-    link.addEventListener("click", () => {
-      const areaKey = code === "10" ? "region:10" : `province:${code}`;
-      forecastState = { area: areaKey, commodity: $("map-commodity").value };
-      location.hash = "#forecast";
-    });
-    card.appendChild(link);
   }
 
-  // ---------- หน้า 3: เดือนหน้าเป็นไง ----------
-  let forecastState = { area: "region:TG", commodity: "10000" };
+  // ---------- แถบ AI บนหน้าแรก ----------
+  function renderAiBanner(fc, products) {
+    const banner = $("ai-banner");
+    banner.replaceChildren();
+    if (!fc) { banner.hidden = true; return; }
+    const body = el("div", "ai-body");
+    body.append(
+      el("div", "ai-label", `AI คาดว่าเดือน ${thMonth(fc.target_period)}`),
+      el("div", "ai-value", `ของโดยรวมจะ${moveText(fc.predicted_change_pct)}`),
+    );
+    const chips = el("div", "ai-chips");
+    for (const id of ["P11028", "P11003", "F52002"]) {
+      const product = products.find((p) => p.product_id === id);
+      if (!product || !product.next_month_price) continue;
+      const chip = el("span", "ai-chip");
+      chip.append(document.createTextNode(`${product.label} ≈ `), el("b", "", bahtPrice(product.next_month_price)), document.createTextNode(perUnit(product.unit)));
+      chips.appendChild(chip);
+    }
+    body.appendChild(chips);
+    banner.append(plate("sparkle"), body, el("span", "ai-cta", "ดูที่ AI ทาย →"));
+  }
+
+  // ---------- หน้า 3: เดือนหน้าเป็นไง (เฉพาะหมวดที่มีราคาจริงเป็นบาท) ----------
+  const FORECAST_CATEGORIES = [
+    ["11310", "ไข่"], ["11211", "หมู / เนื้อวัว"], ["11221", "ไก่ / เป็ด"], ["11232", "ปลาทะเล"], ["11231", "ปลาน้ำจืด"],
+    ["11233", "กุ้ง หอย ปลาหมึก"], ["11411", "ผักสด"], ["11421", "ผลไม้"], ["11110", "ข้าวสาร"], ["11521", "น้ำมันพืช"], ["52200", "น้ำมันรถ"],
+  ];
+  const categoryName = (code) => (FORECAST_CATEGORIES.find(([c]) => c === code) || [code, code])[1];
+  let fcCategory = "11310";
+  let fcProductId = "P11028";
+  let fcCurrent = null;
+
   async function renderForecastPage() {
-    const [areas, commodities] = await Promise.all([areasP(), commoditiesP()]);
-    const areaSelect = $("fc-area"), commoditySelect = $("fc-commodity");
-    if (!areaSelect.options.length) {
-      fillSelect(areaSelect, areaOptions(areas));
-      fillSelect(commoditySelect, commodityOptions(commodities));
-      areaSelect.addEventListener("change", () => { forecastState.area = areaSelect.value; drawForecast(); });
-      commoditySelect.addEventListener("change", () => { forecastState.commodity = commoditySelect.value; drawForecast(); });
+    const products = (await pricesP()).filter((p) => p.next_month_price !== null);
+    const chips = $("fc-categories");
+    if (!chips.children.length) {
+      for (const [code, label] of FORECAST_CATEGORIES.filter(([code]) => products.some((p) => p.cpi_code === code))) {
+        const button = el("button", "", label);
+        button.dataset.category = code;
+        chips.appendChild(button);
+      }
+      chips.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-category]");
+        if (!button) return;
+        fcCategory = button.dataset.category;
+        const inCategory = products.filter((p) => p.cpi_code === fcCategory);
+        fcProductId = (inCategory.find((p) => STAPLES.includes(p.product_id) || p.product_id === "F52002") || inCategory[0]).product_id;
+        fillProductSelect(products);
+        drawForecastProduct();
+      });
+      $("fc-product").addEventListener("change", () => { fcProductId = $("fc-product").value; drawForecastProduct(); });
       $("fc-live").addEventListener("click", predictLive);
     }
-    areaSelect.value = forecastState.area;
-    commoditySelect.value = forecastState.commodity;
-    await drawForecast();
-    await Promise.all([renderForecastTop(), renderForecastAccuracy()]);
-    renderForecastTakeaway();
+    fillProductSelect(products);
+    await drawForecastProduct();
+    await Promise.all([renderMovers(), renderForecastAccuracy()]);
   }
 
-  async function drawForecast() {
-    const { area, commodity } = forecastState;
+  function fillProductSelect(products) {
+    document.querySelectorAll("#fc-categories button").forEach((b) => b.classList.toggle("active", b.dataset.category === fcCategory));
+    const inCategory = products.filter((p) => p.cpi_code === fcCategory).sort((a, b) => a.label.localeCompare(b.label, "th"));
+    fillSelect($("fc-product"), inCategory.map((p) => ({ value: p.product_id, label: `${p.label} (${p.unit})` })), fcProductId);
+  }
+
+  async function drawForecastProduct() {
     const container = $("chart-forecast");
-    const areaName = $("fc-area").selectedOptions[0]?.textContent.replace("◆ ", "");
-    const commodityName = $("fc-commodity").selectedOptions[0]?.textContent.trim();
-    $("fc-title").textContent = `${commodityName} · ${areaName}`;
-    renderForecastProducts();
     try {
-      const data = await api(`/api/series?area_key=${encodeURIComponent(area)}&commodity_code=${commodity}&months=60`);
-      const history = data.history.map((p) => [parseDate(p.period_date), p.index_value]);
-      const series = [{ name: "ระดับราคาจริง", color: cssVar("--series-1"), points: history, endLabel: false, area: true }];
-      const f = data.forecast;
-      if (f) series.push({ name: "ที่โมเดลทาย", color: cssVar("--forecast"), dashed: true, endLabel: false, points: [[parseDate(f.base_period), f.base_index], [parseDate(f.target_period), f.predicted_index]] });
-      line(container, { series, yFormat: (v) => num(v, 1), forceLegend: true, ariaLabel: "ระดับราคาและค่าที่โมเดลทาย" });
-      renderBadge(f ? { target: f.target_period, change: f.predicted_change_pct, note: "ผลจากรอบล่าสุดของ Airflow" } : null);
-    } catch (error) { showError(container, error); renderBadge(null); }
+      const data = await api(`/api/forecast/product?product_id=${fcProductId}`);
+      const product = data.product;
+      fcCurrent = product;
+      $("fc-title").textContent = `${product.label} (${product.unit})`;
+      const color = cssVar("--series-1");
+      const series = [{ name: "ราคาจริง (เฉลี่ยรายเดือน)", color, area: true, endLabel: false, points: data.monthly.map((m) => [parseDate(m.period_date), m.avg_price]) }];
+      if (product.next_month_price) {
+        series.push({ name: "ที่ AI ทาย", color: cssVar("--forecast"), dashed: true, endLabel: false, points: [[parseDate(product.base_period), product.base_month_price], [parseDate(product.target_period), product.next_month_price]] });
+      }
+      line(container, {
+        series, forceLegend: true, ariaLabel: "ราคาจริงและที่ AI ทาย",
+        yFormat: (v, isAxis) => (isAxis ? num(v, Math.abs(v) < 10 ? 2 : v < 100 ? 1 : 0) : bahtPrice(v)),
+      });
+      renderForecastBadge(product, product.predicted_change_pct, "ผลจากรอบล่าสุดของ Airflow");
+      renderBacktest(data);
+    } catch (error) { showError(container, error); }
   }
 
-  function renderBadge(result) {
+  function renderForecastBadge(product, change, note) {
     const badge = $("fc-badge");
     badge.replaceChildren();
-    if (!result) { badge.appendChild(el("div", "muted", "ยังไม่มีค่าคาดการณ์")); return; }
-    const change = el("div", "big", moveText(result.change));
-    change.style.color = changeColor(result.change);
-    badge.append(el("div", "muted", `${thMonth(result.target)} คาดว่าจะ`), change, el("div", "muted", `จากเดือนก่อน · ${result.note}`));
+    if (change === null || change === undefined || !product.base_month_price) { badge.appendChild(el("div", "muted", "ยังไม่มีค่าที่ AI ทาย")); return; }
+    const predicted = product.base_month_price * (1 + change / 100);
+    const big = el("div", "big", `${bahtPrice(predicted)}`);
+    big.appendChild(el("span", "per", perUnit(product.unit)));
+    const move = el("div", "badge-change", `${moveText(change)} จาก ${thMonth(product.base_period)}`);
+    move.style.color = changeColor(change);
+    badge.append(el("div", "muted", `AI ทายราคาเฉลี่ย ${thMonth(product.target_period)}`), big, move);
+    if (product.target_month_actual) {
+      badge.appendChild(el("div", "muted", `ราคาจริง ${thMonth(product.target_period)} (${product.target_month_days} วันที่สำรวจแล้ว) ≈ ${bahtPrice(product.target_month_actual)}`));
+    }
+    badge.appendChild(el("div", "muted", note));
   }
 
   async function predictLive() {
     const button = $("fc-live");
+    if (!fcCurrent) return;
     button.disabled = true;
-    button.textContent = "โมเดลกำลังคิด…";
+    button.textContent = "AI กำลังคิด…";
     try {
       const p = await api("/api/predict", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area_key: forecastState.area, commodity_code: forecastState.commodity }),
+        body: JSON.stringify({ area_key: "region:10", commodity_code: fcCurrent.cpi_code }),
       });
-      renderBadge({ target: p.target_period, change: p.predicted_change_pct, note: "ทายใหม่เมื่อสักครู่" });
+      renderForecastBadge(fcCurrent, p.predicted_change_pct, "ทายใหม่เมื่อสักครู่");
     } catch (error) {
       $("fc-badge").replaceChildren(el("div", "muted", `ทายไม่ได้: ${error.message}`));
     } finally {
       button.disabled = false;
-      button.textContent = "ให้โมเดลทายใหม่ตอนนี้";
+      button.textContent = "ให้ AI ทายใหม่ตอนนี้";
     }
   }
 
-  async function renderForecastTop() {
+  function renderBacktest(data) {
+    const tiles = $("fc-bt-tiles");
+    const container = $("chart-backtest");
+    tiles.replaceChildren();
+    const s = data.summary;
+    if (!s) {
+      $("fc-bt-sub").textContent = "ยังไม่มีผลทดสอบของสินค้านี้ (ต้องมีราคาจริงช่วงที่ทดสอบ)";
+      container.replaceChildren(el("div", "empty-state", "ยังไม่มีข้อมูลทดสอบ"));
+      return;
+    }
+    const rows = data.backtest;
+    $("fc-bt-sub").textContent = `AI เรียนจากข้อมูลถึง ${thMonth(s.trained_through)} แล้วทายทีละเดือน ${s.months} เดือนหลังจากนั้น (${thMonth(rows[0].target_period)} – ${thMonth(rows[rows.length - 1].target_period)}) ซึ่ง AI ไม่เคยเห็นมาก่อน · AI ทาย % ของหมวด "${categoryName(data.product.cpi_code)}" แล้วคูณกับราคาเดือนก่อนของสินค้านี้`;
+    const better = s.naive_error_pct - s.ai_error_pct;
+    tile(tiles, { label: "ทายราคาพลาดเฉลี่ย", value: `±${num(s.ai_error_pct, 1)}%`, sub: `ต่อเดือน · ${data.product.label}`, icon: "target", tone: "purple" });
+    tile(tiles, {
+      label: "เทียบกับเดาว่า \"ราคาเท่าเดิม\"", value: better >= 0 ? `แม่นกว่า ${num(better, 1)} จุด` : `พลาดมากกว่า ${num(-better, 1)} จุด`,
+      sub: `เดาว่าเท่าเดิมพลาดเฉลี่ย ±${num(s.naive_error_pct, 1)}%`, icon: "equal", tone: better >= 0 ? "green" : "pink",
+    });
+    tile(tiles, {
+      label: "ทายถูกว่าจะขึ้นหรือลง", value: s.direction_months ? `${s.direction_hits} จาก ${s.direction_months} เดือน` : "–",
+      sub: "นับเฉพาะเดือนที่ราคาขยับจริง", icon: "updown", tone: "blue",
+    });
+    line(container, {
+      forceLegend: true, endLabels: false, ariaLabel: "AI ทายไว้เทียบกับราคาจริง",
+      yFormat: (v, isAxis) => (isAxis ? num(v, Math.abs(v) < 10 ? 2 : v < 100 ? 1 : 0) : bahtPrice(v)),
+      series: [
+        { name: "ราคาจริง", color: cssVar("--series-1"), points: rows.map((r) => [parseDate(r.target_period), r.actual_price]) },
+        { name: "AI ทายไว้ล่วงหน้า 1 เดือน", color: cssVar("--forecast"), dashed: true, points: rows.map((r) => [parseDate(r.target_period), r.predicted_price]) },
+      ],
+    });
+  }
+
+  function productRow(container, product) {
+    const look = productLook(product.label);
+    const row = el("button", `pf-row tone-${look.tone}`);
+    row.type = "button";
+    const name = el("div", "pf-name");
+    name.append(el("b", "", product.label), el("span", "muted", `${categoryName(product.cpi_code)} · ${product.unit}`));
+    const next = el("div", "pf-next", bahtPrice(product.next_month_price));
+    next.style.color = changeColor(product.predicted_change_pct);
+    row.append(plate(look.icon), name, el("div", "pf-now", bahtPrice(product.base_month_price)), el("div", "pf-arrow", "→"), next, el("div", "pf-chg", pct(product.predicted_change_pct)));
+    row.addEventListener("click", () => {
+      fcCategory = product.cpi_code;
+      fcProductId = product.product_id;
+      pricesP().then((products) => { fillProductSelect(products.filter((p) => p.next_month_price !== null)); drawForecastProduct(); });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    container.appendChild(row);
+  }
+
+  async function renderMovers() {
     try {
-      const data = await once("fc-top", () => api("/api/forecast/top?n=8"));
-      const toItems = (rows) => rows.map((r) => ({ label: r.commodity_name, value: r.predicted_change_pct }));
-      if (data.rising[0]) $("fc-top-sub").textContent = `ทั้งประเทศ · ${thMonth(data.rising[0].target_period)} เทียบกับเดือนก่อน`;
-      bars($("fc-rising"), toItems(data.rising), { format: (v) => pct(v), valueLabel: "คาดว่าจะเปลี่ยน" });
-      bars($("fc-falling"), toItems(data.falling), { format: (v) => pct(v), valueLabel: "คาดว่าจะเปลี่ยน" });
+      const [data, summary] = await Promise.all([once("movers", () => api("/api/forecast/products?n=6")), summaryP()]);
+      for (const [id, items] of [["fc-rising", data.rising], ["fc-falling", data.falling]]) {
+        const box = $(id);
+        box.replaceChildren();
+        if (!items.length) box.appendChild(el("div", "empty-state", "ไม่มี"));
+        for (const product of items) productRow(box, product);
+      }
+      const sample = data.rising[0] || data.falling[0];
+      if (sample) {
+        const text = `ราคาเฉลี่ย ${thMonth(sample.base_period)} → ที่ AI ทายสำหรับ ${thMonth(sample.target_period)} · กดเพื่อดูกราฟ`;
+        $("fc-rising-sub").textContent = text;
+        $("fc-falling-sub").textContent = text;
+      }
+      const fc = summary.forecast["00000"];
+      const parts = [];
+      if (fc) parts.push(`AI คาดว่าเดือน ${thMonth(fc.target_period)} ของโดยรวมจะ${moveText(fc.predicted_change_pct)} จากเดือนก่อน`);
+      const up = data.rising[0], down = data.falling[0];
+      if (up) parts.push(`ของที่น่าจะแพงขึ้น เช่น ${up.label} ≈ ${bahtPrice(up.next_month_price)}${perUnit(up.unit)} (${pct(up.predicted_change_pct, 1)})`);
+      if (down) parts.push(`ที่น่าจะถูกลง เช่น ${down.label} ≈ ${bahtPrice(down.next_month_price)}${perUnit(down.unit)} (${pct(down.predicted_change_pct, 1)})`);
+      $("fc-takeaway").textContent = parts.join(" · ");
     } catch (error) { showError($("fc-rising"), error); }
   }
 
@@ -524,47 +642,8 @@
       const champion = championOf(await metricsP());
       if (!champion) return;
       const gain = (1 - champion.rmse / champion.baseline_rmse) * 100;
-      $("fc-accuracy").textContent = `โมเดลแม่นแค่ไหน: ทดสอบกับ 12 เดือนล่าสุดที่โมเดลไม่เคยเห็น ทายพลาดเฉลี่ยประมาณ ±${num(champion.mae, 1)}% ต่อเดือน ทายถูกว่าจะขึ้นหรือลง ${num(champion.direction_accuracy * 100, 0)}% ของครั้ง และแม่นกว่าการเดาว่า "ราคาเท่าเดิม" ${num(gain, 0)}% · รายละเอียดอยู่ในหน้าเบื้องหลังระบบ`;
+      $("fc-accuracy").textContent = `ควรรู้: AI ตัวนี้ใช้ดูแนวโน้มว่าราคาน่าจะขึ้นหรือลง ไม่ได้ทายราคาได้เป๊ะ · ทดสอบกับทุกหมวดทุกพื้นที่ช่วง 12 เดือนที่ไม่เคยเห็น ทายพลาดเฉลี่ยประมาณ ±${num(champion.mae, 1)}% ต่อเดือน ทายทิศทางถูก ${num(champion.direction_accuracy * 100, 0)}% และแม่นกว่าการเดาว่า "ราคาเท่าเดิม" ${num(gain, 0)}% · ราคาจริงมาจากตลาดและปั๊มในกรุงเทพฯ · รายละเอียดทางเทคนิคอยู่ในหน้าเบื้องหลังระบบ`;
     } catch (error) { $("fc-accuracy").textContent = ""; }
-  }
-
-  async function renderForecastTakeaway() {
-    try {
-      const [summary, top] = await Promise.all([summaryP(), once("fc-top", () => api("/api/forecast/top?n=8"))]);
-      const fc = summary.forecast["00000"];
-      if (!fc) return;
-      const parts = [`AI คาดว่าเดือน ${thMonth(fc.target_period)} ของโดยรวมจะ${moveText(fc.predicted_change_pct)} จากเดือนก่อน (ตัวเลขจริงของ สนค. จะประกาศต้นเดือนถัดไป)`];
-      if (top.rising[0]) parts.push(`ที่คาดว่าจะแพงขึ้นมากสุดคือ${top.rising[0].commodity_name} (${pct(top.rising[0].predicted_change_pct, 1)})`);
-      if (top.falling[0] && top.falling[0].predicted_change_pct < 0) parts.push(`ส่วน${top.falling[0].commodity_name}น่าจะถูกลง (${pct(top.falling[0].predicted_change_pct, 1)})`);
-      $("fc-takeaway").textContent = parts.join(" · ");
-    } catch (error) { $("fc-takeaway").textContent = ""; }
-  }
-
-  // ราคาจริงของสินค้าในหมวดที่เลือก + ราคาคาดเดือนหน้า
-  async function renderForecastProducts() {
-    const box = $("fc-products");
-    try {
-      const data = await api(`/api/forecast/products?commodity_code=${forecastState.commodity}&n=10`);
-      box.replaceChildren();
-      if (!data.items.length) {
-        $("fc-products-sub").textContent = "ราคาจริงวันนี้ → ราคาที่คาดเดือนหน้า";
-        box.appendChild(el("div", "empty-state", "เรื่องนี้ไม่มีสินค้าที่กรมการค้าภายในสำรวจราคาเป็นบาท (เช่น ค่าเดินทาง ค่าเทอม) จึงดูได้แค่แนวโน้มด้านล่าง ลองเลือก \"อาหารและเครื่องดื่ม\""));
-        return;
-      }
-      $("fc-products-sub").textContent = `ราคาจริงวันนี้ → ราคาที่คาดใน${thMonth(data.items[0].target_period)} · ${data.items.length} จาก ${data.total} รายการที่คาดว่าจะเปลี่ยนมากที่สุด · กดเพื่อดูราคาย้อนหลัง`;
-      for (const product of data.items) {
-        const look = productLook(product.label);
-        const row = el("button", `pf-row tone-${look.tone}`);
-        row.type = "button";
-        const name = el("div", "pf-name");
-        name.append(el("b", "", product.label), el("span", "muted", product.unit));
-        const next = el("div", "pf-next", bahtPrice(product.next_month_price));
-        next.style.color = changeColor(product.predicted_change_pct);
-        row.append(plate(look.icon), name, el("div", "pf-now", bahtPrice(product.latest_price)), el("div", "pf-arrow", "→"), next, el("div", "pf-chg", pct(product.predicted_change_pct)));
-        row.addEventListener("click", () => { selectedProduct = product; location.hash = "#prices"; });
-        box.appendChild(row);
-      }
-    } catch (error) { showError(box, error); }
   }
 
   // ---------- หน้า 4: ค่าแรงพอไหม ----------
@@ -615,7 +694,7 @@
     // ค่าแรง 1 วันซื้ออะไรได้บ้าง (ราคาตลาดกรุงเทพฯ)
     const list = $("buy-list");
     list.replaceChildren();
-    for (const product of STAPLES.map((id) => products.find((p) => p.product_id === id)).filter(Boolean)) {
+    for (const product of BUY_ITEMS.map((id) => products.find((p) => p.product_id === id)).filter(Boolean)) {
       const { price, unit } = unitPrice(product);
       const quantity = last.nominal_wage / price;
       const look = productLook(product.label);

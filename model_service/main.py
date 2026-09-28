@@ -234,8 +234,8 @@ ACTIVE_PRICE_DAYS = 180
 
 @app.get("/api/prices")
 def prices() -> list[dict[str, Any]]:
-    """ราคาขายปลีกจริงของกรมการค้าภายใน: ราคาล่าสุด, เทียบ 1 และ 5 ปีก่อน, เส้นย้อนหลัง 24 เดือน
-    และราคาคาดการณ์เดือนหน้า (ราคาจริงล่าสุด × % ที่โมเดลคาดของหมวดสินค้านั้น ในกรุงเทพฯ และปริมณฑล)."""
+    """ราคาขายปลีกจริง (กรมการค้าภายใน + น้ำมัน ปตท.): ราคาล่าสุด, เทียบ 1 และ 5 ปีก่อน, เส้นย้อนหลัง 24 เดือน
+    และราคาที่ AI ทาย (ราคาเฉลี่ยเดือนฐาน × % ที่โมเดลคาดของหมวดสินค้านั้น ในกรุงเทพฯ และปริมณฑล)."""
     return _query(
         """
         WITH latest_day AS (
@@ -247,7 +247,7 @@ def prices() -> list[dict[str, Any]]:
             FROM retail_price_monthly ORDER BY product_id, period_date DESC
         ),
         forecast AS (
-            SELECT commodity_code, predicted_change_pct, target_period FROM cpi_forecasts
+            SELECT commodity_code, predicted_change_pct, base_period, target_period FROM cpi_forecasts
             WHERE area_type = 'region' AND area_code = '10'
               AND target_period = (SELECT MAX(target_period) FROM cpi_forecasts)
         )
@@ -260,8 +260,10 @@ def prices() -> list[dict[str, Any]]:
                    WHERE m.product_id = p.product_id AND m.period_date > lm.period_date - INTERVAL '24 months'
                    ORDER BY m.period_date
                ) AS spark,
-               f.predicted_change_pct, f.target_period,
-               (d.price_min + d.price_max) / 2 * (1 + f.predicted_change_pct / 100) AS next_month_price
+               f.predicted_change_pct, f.base_period, f.target_period,
+               bm.avg_price AS base_month_price,
+               bm.avg_price * (1 + f.predicted_change_pct / 100) AS next_month_price,
+               tm.avg_price AS target_month_actual, tm.days_observed AS target_month_days
         FROM dim_product p
         JOIN latest_day d USING (product_id)
         JOIN latest_month lm USING (product_id)
@@ -270,6 +272,9 @@ def prices() -> list[dict[str, Any]]:
         LEFT JOIN retail_price_monthly y5
           ON y5.product_id = p.product_id AND y5.period_date = lm.period_date - INTERVAL '60 months'
         LEFT JOIN forecast f ON f.commodity_code = p.cpi_code
+        -- ราคาที่ AI ทาย = ราคาเฉลี่ยเดือนฐาน × (1 + เปอร์เซ็นต์ที่ทาย) เทียบได้ตรงกับราคาเฉลี่ยจริงของเดือนที่ทาย
+        LEFT JOIN retail_price_monthly bm ON bm.product_id = p.product_id AND bm.period_date = f.base_period
+        LEFT JOIN retail_price_monthly tm ON tm.product_id = p.product_id AND tm.period_date = f.target_period
         WHERE d.price_date > CURRENT_DATE - %s * INTERVAL '1 day'
         ORDER BY p.product_id
         """,
@@ -518,8 +523,8 @@ def price_history(product_id: str = Query(..., pattern=r"^[A-Z]\d{5}$")) -> dict
 
 
 @app.get("/api/forecast/products")
-def forecast_products(commodity_code: str = "10000", n: int = Query(12, ge=1, le=40)) -> dict[str, Any]:
-    """สินค้าที่มีราคาจริงในหมวดที่เลือก พร้อมราคาคาดการณ์เดือนหน้าจากโมเดล."""
+def forecast_products(commodity_code: str = "00000", n: int = Query(6, ge=1, le=40)) -> dict[str, Any]:
+    """สินค้าที่มีราคาจริงซึ่ง AI คาดว่าจะแพงขึ้น/ถูกลงมากที่สุด (ไม่เกิน 2 ตัวต่อหมวด เพราะในหมวดเดียวกันได้ % เท่ากัน)."""
     _check_commodity(commodity_code)
     # หมวดย่อยมีรหัสขึ้นต้นเหมือนหมวดแม่ เช่น 11000 -> 11xxx, 00000 = ทุกหมวด
     prefix = commodity_code.rstrip("0")
@@ -527,16 +532,71 @@ def forecast_products(commodity_code: str = "10000", n: int = Query(12, ge=1, le
         item for item in prices()
         if item["cpi_code"].startswith(prefix) and item["next_month_price"] is not None
     ]
-    # สินค้าที่คาดว่าราคาจะเปลี่ยนมากที่สุดขึ้นก่อน แต่ไม่เกิน 2 ตัวต่อหมวด
-    # (สินค้าในหมวดเดียวกันได้ % เท่ากัน ถ้าไม่จำกัดจะเห็นแต่ส้มหลายเบอร์)
-    items.sort(key=lambda item: abs(item["predicted_change_pct"]), reverse=True)
-    picked: list[dict[str, Any]] = []
-    per_category: dict[str, int] = {}
-    for item in items:
-        if per_category.get(item["cpi_code"], 0) < 2:
-            per_category[item["cpi_code"]] = per_category.get(item["cpi_code"], 0) + 1
-            picked.append(item)
-    return {"total": len(items), "items": picked[:n]}
+
+    def pick(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        picked: list[dict[str, Any]] = []
+        per_category: dict[str, int] = {}
+        for item in candidates:
+            if per_category.get(item["cpi_code"], 0) < 2:
+                per_category[item["cpi_code"]] = per_category.get(item["cpi_code"], 0) + 1
+                picked.append(item)
+        return picked[:n]
+
+    rising = sorted((i for i in items if i["predicted_change_pct"] > 0), key=lambda i: -i["predicted_change_pct"])
+    falling = sorted((i for i in items if i["predicted_change_pct"] < 0), key=lambda i: i["predicted_change_pct"])
+    return {"total": len(items), "rising": pick(rising), "falling": pick(falling)}
+
+
+@app.get("/api/forecast/product")
+def forecast_product(product_id: str = Query(..., pattern=r"^[A-Z]\d{5}$")) -> dict[str, Any]:
+    """ราคาจริงของสินค้า 5 ปี + ราคาที่ AI ทาย + ผลทดสอบย้อนหลัง "ทายไว้ vs เกิดจริง" เป็นบาท.
+
+    ผลทดสอบมาจาก cpi_backtest: โมเดลที่ใช้งานจริงทายเดือนหลังวันที่เทรนจบ (ไม่เคยเห็นมาก่อน)
+    ราคาที่ทายไว้ = ราคาเฉลี่ยจริงเดือนก่อนหน้า × (1 + % ที่ทายของหมวดสินค้านั้น)
+    """
+    product = next((item for item in prices() if item["product_id"] == product_id), None)
+    if product is None:
+        raise HTTPException(status_code=404, detail="Unknown or inactive product")
+    monthly = _query(
+        """
+        SELECT period_date, avg_price, low_price, high_price, days_observed
+        FROM retail_price_monthly
+        WHERE product_id = %s AND period_date > (
+            SELECT MAX(period_date) FROM retail_price_monthly WHERE product_id = %s
+        ) - INTERVAL '60 months'
+        ORDER BY period_date
+        """,
+        (product_id, product_id),
+    )
+    rows = _query(
+        """
+        SELECT b.base_period, b.target_period, b.predicted_change_pct, b.actual_change_pct,
+               b.model_trained_through, bm.avg_price AS base_price, tm.avg_price AS actual_price,
+               bm.avg_price * (1 + b.predicted_change_pct / 100) AS predicted_price
+        FROM cpi_backtest b
+        JOIN retail_price_monthly bm ON bm.product_id = %s AND bm.period_date = b.base_period
+        JOIN retail_price_monthly tm ON tm.product_id = %s AND tm.period_date = b.target_period
+        WHERE b.area_type = 'region' AND b.area_code = '10' AND b.commodity_code = %s
+        ORDER BY b.target_period
+        """,
+        (product_id, product_id, product["cpi_code"]),
+    )
+    summary = None
+    if rows:
+        ai_errors = [abs(r["predicted_price"] - r["actual_price"]) / r["actual_price"] * 100 for r in rows]
+        naive_errors = [abs(r["base_price"] - r["actual_price"]) / r["actual_price"] * 100 for r in rows]
+        # นับทิศทางเฉพาะเดือนที่ราคาจริงขยับเกิน 0.1% (เดือนที่นิ่งไม่มีทิศทางให้ทาย)
+        moved = [r for r in rows if abs(r["actual_price"] - r["base_price"]) / r["base_price"] > 0.001]
+        hits = sum(1 for r in moved if (r["predicted_price"] - r["base_price"]) * (r["actual_price"] - r["base_price"]) > 0)
+        summary = {
+            "months": len(rows),
+            "ai_error_pct": sum(ai_errors) / len(ai_errors),
+            "naive_error_pct": sum(naive_errors) / len(naive_errors),
+            "direction_hits": hits,
+            "direction_months": len(moved),
+            "trained_through": rows[0]["model_trained_through"],
+        }
+    return {"product": product, "monthly": monthly, "backtest": rows, "summary": summary}
 
 
 @app.get("/api/wage")
@@ -599,6 +659,7 @@ def pipeline() -> dict[str, Any]:
         UNION ALL SELECT 'minimum_wage', COUNT(*) FROM minimum_wage
         UNION ALL SELECT 'retail_prices_daily', COUNT(*) FROM retail_prices_daily
         UNION ALL SELECT 'retail_price_monthly', COUNT(*) FROM retail_price_monthly
+        UNION ALL SELECT 'cpi_backtest', COUNT(*) FROM cpi_backtest
         UNION ALL SELECT 'price_estimates', COUNT(*) FROM price_estimates
         UNION ALL SELECT 'farm_prices_monthly', COUNT(*) FROM farm_prices_monthly
         """
