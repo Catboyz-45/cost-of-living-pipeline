@@ -84,5 +84,5 @@
 | `coconut.jpg` | [Coconuts - single and cracked open.jpg](https://commons.wikimedia.org/wiki/File:Coconuts_-_single_and_cracked_open.jpg) | Ivar Leidus | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `sticky-rice.jpg` | [2014 uncooked Thai glutinous rice.jpg](https://commons.wikimedia.org/wiki/File:2014_uncooked_Thai_glutinous_rice.jpg) | Takeaway | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `rice.jpg` | [Uncooked ST25 rice on bamboo surface.jpg](https://commons.wikimedia.org/wiki/File:Uncooked_ST25_rice_on_bamboo_surface.jpg) | VinhNguyen.1257 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
-| `duck.svg` | ภาพวาดเป็ดสดทั้งตัว | วาดขึ้นเองสำหรับโปรเจกต์นี้ (หารูปถ่ายที่ใช้ได้ไม่เจอ) | ใช้ได้อิสระ |
+| `duck.jpg` | รูปถ่ายเป็ดสดทั้งตัว | เจ้าของโปรเจกต์จัดหามา | - |
 | `water-mimosa.svg` | ภาพวาดผักกะเฉด | วาดขึ้นเองสำหรับโปรเจกต์นี้ (หารูปถ่ายที่ใช้ได้ไม่เจอ) | ใช้ได้อิสระ |

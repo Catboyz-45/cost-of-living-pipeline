@@ -59,11 +59,16 @@
   // การ์ดและส่วนต่าง ๆ ค่อยเลื่อนขึ้นเมื่อเลื่อนจอมาถึง (ครั้งเดียว)
   const revealObserver = !reduceMotion && "IntersectionObserver" in window
     ? new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.classList.add("in");
-        revealObserver.unobserve(entry.target);
-      }
+      // ที่โผล่พร้อมกันค่อย ๆ ขึ้นทีละชิ้น แล้วล้าง delay ทิ้งเพื่อไม่ให้ hover หน่วง
+      entries.filter((entry) => entry.isIntersecting).forEach((entry, i) => {
+        const node = entry.target;
+        if (i) {
+          node.style.transitionDelay = `${Math.min(i, 6) * 70}ms`;
+          setTimeout(() => { node.style.transitionDelay = ""; }, 700 + Math.min(i, 6) * 70);
+        }
+        node.classList.add("in");
+        revealObserver.unobserve(node);
+      });
     }, { rootMargin: "0px 0px -6% 0px" })
     : null;
   function prepareReveal() {
@@ -323,11 +328,11 @@
   }
 
   // รูปสินค้าจริงจาก Wikimedia Commons (เครดิตใน static/products/credits.html) จับชนิดจากชื่อสินค้า ตัวแรกที่ตรงชนะ
-  // สินค้าต่างเกรด/ต่างร้านใช้รูปเดียวกัน · เป็ดทั้งตัวกับผักกะเฉดไม่มีรูปถ่ายที่ใช้ได้ จึงเป็นภาพวาด SVG ที่ทำขึ้นเอง
+  // สินค้าต่างเกรด/ต่างร้านใช้รูปเดียวกัน · ผักกะเฉดไม่มีรูปถ่ายที่ใช้ได้ จึงเป็นภาพวาด SVG ที่ทำขึ้นเอง
   const PRODUCT_PHOTOS = [
     ["fuel", /ดีเซล|แก๊สโซฮอล์/], ["salted-egg", /ไข่เป็ดเค็ม/], ["duck-egg", /ไข่เป็ด/], ["egg", /ไข่ไก่/],
     ["pork-belly", /หมูสามชั้น/], ["pork", /สุกร|หมู/], ["beef", /เนื้อโค/], ["chicken-feet", /แข้ง ขา ตีน/],
-    ["chicken-wing", /ไก่.*ปีก/], ["chicken-leg", /ไก่.*(น่อง|สะโพก)/], ["chicken-breast", /อกไก่|ไก่.*(เนื้ออก|สันใน)/], ["chicken", /ไก่/], ["duck", /เป็ดสด/, "svg"],
+    ["chicken-wing", /ไก่.*ปีก/], ["chicken-leg", /ไก่.*(น่อง|สะโพก)/], ["chicken-breast", /อกไก่|ไก่.*(เนื้ออก|สันใน)/], ["chicken", /ไก่/], ["duck", /เป็ดสด/],
     ["giant-prawn", /กุ้งก้ามกราม/], ["shrimp", /กุ้ง/], ["seabass", /ปลากระพง/], ["snakehead", /ปลาช่อน/], ["catfish", /ปลาดุก/],
     ["tilapia", /ปลานิล|ปลาทับทิม/], ["mackerel", /ปลาทู/], ["pangasius", /ปลาสวาย/], ["cuttlefish", /หมึกกระดอง/], ["squid", /หมึก/],
     ["clam", /หอยลาย/], ["cockle", /หอยแครง/], ["mussel", /หอยแมลงภู่/], ["krachai", /กระชาย/], ["cauliflower", /กะหล่ำดอก/],
@@ -1142,6 +1147,9 @@
   function saveBasket() {
     try { localStorage.setItem(BASKET_KEY, JSON.stringify(basket)); } catch (error) { /* ใช้ได้ต่อโดยไม่จำ */ }
     const count = $("basket-count");
+    if (count.textContent !== String(basket.length) && !count.hidden) {
+      count.classList.remove("bump"); void count.offsetWidth; count.classList.add("bump");
+    }
     count.textContent = String(basket.length);
     count.hidden = !basket.length;
     syncAddButtons();
@@ -1272,8 +1280,9 @@
     grid.replaceChildren();
     shop.cards.clear();
     if (!matched.length) grid.appendChild(el("div", "empty-state", "ไม่พบสินค้าที่ค้นหา"));
-    for (const p of matched.slice(0, shop.limit)) {
+    for (const [i, p] of matched.slice(0, shop.limit).entries()) {
       const card = shopCard(p);
+      card.style.setProperty("--i", String(i % PAGE_SIZE));
       shop.cards.set(p.product_id, card);
       grid.appendChild(card);
     }
@@ -1549,7 +1558,12 @@
     const page = (location.hash || "#overview").slice(1);
     // #prices (ลิงก์เดิม/จากหน้าพยากรณ์) = ส่วนราคาของกินในหน้าแรก
     const name = page === "prices" ? "overview" : PAGES[page] ? page : "overview";
-    for (const key of Object.keys(PAGES)) $(`page-${key}`).hidden = key !== name;
+    for (const key of Object.keys(PAGES)) {
+      const section = $(`page-${key}`);
+      const entering = key === name && section.hidden;
+      section.hidden = key !== name;
+      if (entering) { section.classList.remove("page-enter"); void section.offsetWidth; section.classList.add("page-enter"); }
+    }
     document.querySelectorAll(".nav a").forEach((link) => link.classList.toggle("active", link.dataset.page === name));
     if (page !== "prices") window.scrollTo({ top: 0 });
     try {

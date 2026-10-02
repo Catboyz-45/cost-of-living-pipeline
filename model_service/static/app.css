@@ -698,7 +698,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .cart {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 60; max-height: 85vh;
     border-radius: 20px 20px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    transform: translateY(105%); transition: transform .25s ease;
+    transform: translateY(105%); transition: transform .4s cubic-bezier(.32, .72, 0, 1);
   }
   .cart.open { transform: none; }
   .cart-close { display: block; }
@@ -749,7 +749,60 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   animation: shine 4.5s ease-in-out infinite;
 }
 .badge-big.settled { border-radius: 12px; animation: settle 1.2s ease-out; }
-.picker-panel { animation: fade-in .15s ease-out; }
+.picker-panel { animation: pop-in .2s var(--ease-out) both; transform-origin: top left; }
+
+/* ---------- ปุ่มและการ์ด: hover / กด ให้ลื่น ----------
+ * สีเปลี่ยนแบบค่อย ๆ จาง, ปุ่มทึบลอยขึ้นนิดตอนชี้, ยุบลงตอนกด, การ์ดเด้งขึ้นแบบสปริง */
+:root {
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --lift-shadow: 0 10px 22px -12px rgba(28, 27, 24, .5);
+}
+@keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@keyframes page-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes card-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+
+button, select, .link-btn, .ai-link, .nav a, .search, .stepper, .picker-search, .bar-row, .table td {
+  transition: background-color .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease, transform .22s var(--ease-out), opacity .6s ease;
+}
+/* ปุ่มทึบ / ปุ่มขอบดำ: ลอยขึ้นพร้อมเงาบาง ๆ */
+button.outline:hover, .shop-add:hover, .link-btn:hover, .cart-cta:hover:not(:disabled), .timelapse .play:hover, .add-basket:hover, .cart-bar:hover {
+  transform: translateY(-2px); box-shadow: var(--lift-shadow);
+}
+.ai-link:hover, .ai-button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -14px var(--ai); }
+.chips button:hover:not(.active) { background: var(--surface-2); }
+.nav a::before, .shop-add::before, .cart-cta::before, .picker-button::after { transition: transform .3s var(--ease-spring); }
+.nav a:hover::before { transform: scale(1.15) rotate(-6deg); }
+.shop-add:hover::before, .cart-cta:hover:not(:disabled)::before { transform: translateY(-2px) rotate(-10deg); }
+.info:hover, .info:focus-visible { transform: scale(1.12); }
+.cart-row .remove:hover { transform: rotate(90deg); }
+.stepper button:active { transform: scale(.85); }
+/* กด: ยุบลงเร็ว ๆ */
+button:active:not(:disabled), .link-btn:active, .ai-link:active, .nav a:active {
+  transform: scale(.96); box-shadow: none; transition-duration: .08s;
+}
+
+/* การ์ดเด้งขึ้นแบบสปริง รูปสินค้าซูมนิด ๆ */
+.price-card, .shop-card { transition: transform .4s var(--ease-spring), border-color .22s ease, box-shadow .22s ease, opacity .6s ease; }
+.price-card:hover, .shop-card:hover { transform: translateY(-4px); }
+.price-card:active:not(:disabled) { transform: translateY(-1px) scale(.99); }
+.pf-row:active:not(:disabled), .picker-option:active:not(:disabled), .bar-row:active { transform: none; }
+.shop-thumb { overflow: hidden; }
+.shop-photo { transition: transform .6s var(--ease-out); }
+.shop-card:hover .shop-photo { transform: scale(1.06); }
+.shop-card { animation: card-in .4s var(--ease-out) backwards; animation-delay: calc(min(var(--i, 0), 12) * 35ms); }
+.pf-row { transition: background-color .22s ease, padding .22s var(--ease-out); }
+.pf-row:hover { padding-left: 8px; padding-right: 8px; }
+
+/* เปลี่ยนหน้า ตะกร้า ใบสรุป ป้ายตัวเลข */
+.page.page-enter { animation: page-in .45s var(--ease-out); }
+.nav-count.bump { animation: bump .4s var(--ease-spring); }
+.summary-dialog[open] { animation: dialog-in .3s var(--ease-out); }
+.summary-dialog[open]::backdrop { animation: fade-in .3s ease-out; }
+.tooltip:not([hidden]) { animation: fade-in .12s ease-out; }
+.cart-backdrop:not([hidden]) { animation: fade-in .3s ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
