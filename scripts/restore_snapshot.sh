@@ -7,7 +7,9 @@
 # รันจากโฟลเดอร์โปรเจกต์ หลัง docker compose up -d (ต้องมี container postgres_target ทำงานอยู่)
 set -euo pipefail
 
-SNAPSHOT_URL="https://github.com/Catboyz-45/cost-of-living-pipeline/releases/download/data-2026-10-02/cost-of-living-snapshot-2026-10-02.tar.gz"
+SNAPSHOT_REPO="Catboyz-45/cost-of-living-pipeline"
+SNAPSHOT_TAG="data-2026-10-02"
+SNAPSHOT_URL="https://github.com/$SNAPSHOT_REPO/releases/download/$SNAPSHOT_TAG/cost-of-living-snapshot-2026-10-02.tar.gz"
 TARGET_CONTAINER="${TARGET_CONTAINER:-postgres_target}"
 source_file="${1:-$SNAPSHOT_URL}"
 
@@ -21,7 +23,19 @@ fi
 
 if [[ "$source_file" == http* ]]; then
   echo "1) ดาวน์โหลด snapshot (~30 MB)"
-  curl -fL --progress-bar -o "$work/snapshot.tar.gz" "$source_file"
+  # repo แบบ private ดาวน์โหลดตรงไม่ได้ (404) จึงลองผ่าน GitHub CLI ที่ล็อกอินบัญชีที่มีสิทธิ์อยู่แล้ว
+  if ! curl -fsSL -o "$work/snapshot.tar.gz" "$source_file"; then
+    if command -v gh >/dev/null 2>&1 && gh release download "$SNAPSHOT_TAG" --repo "$SNAPSHOT_REPO" \
+        --pattern "*.tar.gz" --output "$work/snapshot.tar.gz" 2>/dev/null; then
+      echo "   ดาวน์โหลดผ่าน GitHub CLI แล้ว"
+    else
+      echo "ดาวน์โหลดไม่ได้ (repo อาจเป็น private หรือไม่มีอินเทอร์เน็ต)" >&2
+      echo "→ ล็อกอินด้วย 'gh auth login' แล้วรันใหม่ หรือดาวน์โหลดไฟล์เองจาก" >&2
+      echo "  https://github.com/$SNAPSHOT_REPO/releases/tag/$SNAPSHOT_TAG" >&2
+      echo "  แล้วรัน: bash scripts/restore_snapshot.sh ไฟล์ที่โหลดมา.tar.gz" >&2
+      exit 1
+    fi
+  fi
 else
   echo "1) ใช้ไฟล์ $source_file"
   cp "$source_file" "$work/snapshot.tar.gz"

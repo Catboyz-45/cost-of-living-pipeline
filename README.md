@@ -221,6 +221,7 @@ API ราคาของกรมการค้าภายในล่มเ�
 
 | อาการ / ข้อความ error | สาเหตุ | วิธีแก้ |
 |---|---|---|
+| `git clone` ขึ้น `Repository not found` หรือ `restore_snapshot.sh` ดาวน์โหลดไม่ได้ (404) | repo ตั้งเป็น private คนที่ไม่มีสิทธิ์จะมองไม่เห็นทั้งโค้ดและไฟล์ใน Release | เจ้าของ repo เพิ่มเป็น collaborator (Settings → Collaborators) แล้วล็อกอินด้วย `gh auth login` สคริปต์จะดาวน์โหลดผ่าน GitHub CLI ให้เอง หรือโหลดไฟล์จากหน้า Release แล้วรัน `bash scripts/restore_snapshot.sh ไฟล์.tar.gz` |
 | `Cannot connect to the Docker daemon` | Docker Desktop ยังไม่เปิด | เปิด Docker Desktop รอจนขึ้น Running แล้วสั่งใหม่ |
 | `Conflict. The container name "/airflow_webserver" (หรือ /postgres_target) is already in use` | ไฟล์นี้ตั้งชื่อ container ตายตัว ถ้าเคยรัน workshop ที่ใช้ชื่อเดียวกัน Docker จะไม่ยอมสร้างซ้ำ | ไปที่โฟลเดอร์ workshop เก่าแล้วสั่ง `docker compose down` หรือดูชื่อด้วย `docker ps -a` แล้วลบตัวที่ชนด้วย `docker rm -f ชื่อ` (ข้อมูลใน volume ของ workshop ยังอยู่) |
 | `Bind for 0.0.0.0:8080 failed: port is already allocated` (หรือ 5433, 8001) | มีโปรแกรมหรือ Airflow ตัวอื่นใช้พอร์ตนั้นอยู่ | หยุดตัวที่ใช้พอร์ตอยู่ (`docker ps` ดูว่าเป็นตัวไหน) หรือแก้เลขพอร์ตฝั่งซ้ายใน `docker-compose.yaml` เช่น `"8081:8080"` |
