@@ -240,6 +240,7 @@ services:
       - "8001:8000"   # host:container -> เปิดเว็บที่ http://localhost:8001
     environment:
       DATABASE_URL: postgresql://${TARGET_POSTGRES_USER:-etluser}:${TARGET_POSTGRES_PASSWORD:-etlpass}@postgres_target:5432/${TARGET_POSTGRES_DB:-etl_db}
+      POWERBI_EMBED_URL: ${POWERBI_EMBED_URL:-}   # ลิงก์ฝังรายงาน Power BI (ไม่ใส่ก็ได้) ดู docs/powerbi_guide.md
     depends_on:
       postgres_target:
         condition: service_healthy

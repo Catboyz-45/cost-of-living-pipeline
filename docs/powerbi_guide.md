@@ -25,11 +25,11 @@ Power BI บนเว็บ (app.powerbi.com) ต่อ PostgreSQL ในเค�
 
 ## 2. อัปโหลดขึ้น Power BI
 
-ใช้ไฟล์ **`exports/cost_of_living_powerbi.xlsx`** ไฟล์นี้รวมทุกตารางข้างบนไว้ แยกเป็นหนึ่ง sheet ต่อหนึ่งตาราง Power BI บนเว็บสร้าง semantic model หนึ่งตัวต่อหนึ่งไฟล์ ถ้าอัปโหลด CSV ทีละไฟล์จะโยง Relationship ข้ามตารางไม่ได้
+ใช้ไฟล์ **`exports/cost_of_living_powerbi_lite.xlsx`** (~10 MB) ฉบับย่อที่เก็บหมวดระดับ 1–2 ดัชนีภาคและรายปีตั้งแต่ 2559 และดัชนีจังหวัด 24 เดือนล่าสุด เพราะ Power BI นำเข้า Excel ได้ไม่เกินราว 30 MB (ไฟล์เต็ม `cost_of_living_powerbi.xlsx` ~39 MB จะขึ้น `ExcelViewWorkbookExceedsMaximiumSize`) ทั้งสองไฟล์รวมทุกตารางข้างบนไว้ แยกเป็นหนึ่ง sheet ต่อหนึ่งตาราง Power BI บนเว็บสร้าง semantic model หนึ่งตัวต่อหนึ่งไฟล์ ถ้าอัปโหลด CSV ทีละไฟล์จะโยง Relationship ข้ามตารางไม่ได้
 
-1. อัปโหลด `cost_of_living_powerbi.xlsx` ขึ้น **OneDrive ของมหาวิทยาลัย** เพื่อให้ refresh ได้ภายหลัง หรือจะอัปโหลดจากเครื่องตรง ๆ ก็ได้
-2. ใน Power BI ไปที่ **My workspace** → **Upload** แล้วเลือกไฟล์จาก OneDrive (หรือ **Browse** เพื่อเลือกจากเครื่อง)
-3. Power BI จะสร้าง **semantic model** ชื่อ `cost_of_living_powerbi` ที่มีทุก sheet เป็นตาราง
+1. อัปโหลด `cost_of_living_powerbi_lite.xlsx` ขึ้น **OneDrive ของมหาวิทยาลัย** (Power BI ไม่รับไฟล์ Excel ที่อัปโหลดจากเครื่องตรง ๆ แล้ว จะขึ้น "Upload of Excel File Failed")
+2. ใน Power BI ไปที่ **My workspace** → **Import → Report, Paginated Report or Workbook** → **OneDrive for Business** แล้วเลือกไฟล์ (ถ้าถาม ให้เลือก **Import** ข้อมูล ไม่ใช่ Upload ตัวไฟล์)
+3. Power BI จะสร้าง **semantic model** ชื่อ `cost_of_living_powerbi_lite` ที่มีทุก sheet เป็นตาราง
    (ชื่อ sheet ใน Excel ยาวได้ไม่เกิน 31 ตัวอักษร ตาราง `fact_cpi_province_monthly_recent` จึงชื่อ `fact_cpi_province_monthly_recen`)
 4. เปิด semantic model นั้น → **Open data model** เพื่อโยง Relationship ตามข้อ 3
 5. กด **Create report** (หรือ **Explore this data** → **Auto-create**) เพื่อเริ่มวางกราฟ
@@ -105,3 +105,18 @@ RETURN DIVIDE ( LastWage - FirstWage, FirstWage ) * 100
 1. DAG `thai_cost_of_living_monthly` รันเองวันที่ 10 ของทุกเดือน (หรือกด Trigger ใน Airflow)
 2. task `export_powerbi` เขียนไฟล์ใน `exports/` ใหม่
 3. copy ไฟล์ไปไว้ใน OneDrive ทับไฟล์เดิม แล้วกด **Refresh** ที่ semantic model
+
+## 7. แสดงรายงานในหน้า "เบื้องหลังระบบ" ของเว็บ
+
+หน้า "เบื้องหลังระบบ" (http://localhost:8001) มีการ์ด **Dashboard บน Power BI** ที่ฝังรายงานด้วย iframe ตั้งค่าครั้งเดียวดังนี้
+
+1. เปิดรายงานใน Power BI → **File → Embed report** แล้วเลือกแบบใดแบบหนึ่ง
+   - **Website or portal**: ลิงก์ `https://app.powerbi.com/reportEmbed?reportId=...` คนดูต้องล็อกอินบัญชี @ku.th ในเบราว์เซอร์นั้น (เหมาะกับเดโมบนเครื่องตัวเอง)
+   - **Publish to web (public)**: ลิงก์ `https://app.powerbi.com/view?r=...` ใครก็เปิดได้โดยไม่ต้องล็อกอิน แต่ข้อมูลจะเป็นสาธารณะ และมหาวิทยาลัยอาจปิดตัวเลือกนี้ไว้
+2. คัดลอกเฉพาะลิงก์ (ค่าใน `src="..."` ถ้าได้มาเป็นโค้ด iframe) ไปใส่ในไฟล์ `.env`
+   ```
+   POWERBI_EMBED_URL=https://app.powerbi.com/reportEmbed?reportId=...
+   ```
+3. รัน `docker compose up -d model_api` ให้ container อ่านค่าใหม่ แล้วรีเฟรชหน้าเว็บ
+
+เว็บรับเฉพาะลิงก์ที่ขึ้นต้นด้วย `https://app.powerbi.com/` ถ้าไม่ได้ใส่ การ์ดจะบอกวิธีตั้งค่าแทน

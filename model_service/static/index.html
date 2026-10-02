@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css?v=39">
+<link rel="stylesheet" href="/static/app.css?v=41">
 </head>
 <body>
 <div class="app">
@@ -309,6 +309,16 @@
         <p class="muted">Pearson correlation ของ % เปลี่ยนแปลงรายเดือน (lag = ราคาฟาร์มนำหน้ากี่เดือน) · ความสัมพันธ์ไม่ใช่เหตุและผล</p>
         <div id="farm-corr"></div>
       </article>
+      <article class="card" id="powerbi-card">
+        <div class="card-head">
+          <div>
+            <h2 data-icon="chart">Dashboard บน Power BI</h2>
+            <p class="muted">ข้อมูลชุดเดียวกับเว็บนี้ ส่งออกโดย task <code>export_powerbi</code> ของ Airflow เป็นไฟล์ <code>exports/cost_of_living_powerbi_lite.xlsx</code> แล้วอัปโหลดขึ้น Power BI</p>
+          </div>
+          <a class="link-btn" id="powerbi-open" href="#" target="_blank" rel="noopener" hidden>เปิดใน Power BI</a>
+        </div>
+        <div class="powerbi" id="powerbi"></div>
+      </article>
       <article class="card sources">
         <h2 data-icon="book">แหล่งข้อมูล</h2>
         <ul>
@@ -319,14 +329,14 @@
           <li><b>ราคาสินค้าปศุสัตว์หน้าฟาร์ม</b> — กรมปศุสัตว์ (data.go.th)</li>
           <li><b>ขอบเขตจังหวัด</b> — <a href="https://github.com/chingchai/OpenGISData-Thailand" target="_blank" rel="noopener">OpenGISData-Thailand</a> (ย่อจุดให้เล็กลง)</li>
         </ul>
-        <p class="muted">Airflow UI: <a href="http://localhost:8080" target="_blank" rel="noopener">localhost:8080</a> · API docs: <a href="/docs" target="_blank">/docs</a> · ไฟล์สำหรับ Power BI อยู่ในโฟลเดอร์ <code>exports/</code></p>
+        <p class="muted">Airflow UI: <a href="http://localhost:8080" target="_blank" rel="noopener">localhost:8080</a> · API docs: <a href="/docs" target="_blank">/docs</a></p>
       </article>
     </section>
   </main>
 </div>
 <div class="tooltip" id="tooltip" role="status" hidden></div>
-<script src="/static/icons.js?v=39"></script>
-<script src="/static/charts.js?v=39"></script>
-<script src="/static/app.js?v=39"></script>
+<script src="/static/icons.js?v=41"></script>
+<script src="/static/charts.js?v=41"></script>
+<script src="/static/app.js?v=41"></script>
 </body>
 </html>

@@ -213,7 +213,7 @@ API ราคาของกรมการค้าภายในล่มเ�
 4. Unpause และ Trigger `thai_cost_of_living_backfill` **หนึ่งครั้ง** ครั้งแรกใช้เวลาประมาณ 2 ชั่วโมง ขึ้นกับความเร็ว API ของ สนค. และเว็บกรมการค้าภายใน (ข้ามข้อนี้ได้ถ้าใช้ทางลัดด้านบน)
 5. หลังรันเสร็จ Unpause `thai_cost_of_living_monthly` ให้รันเองทุกเดือน
 6. เปิด **Dashboard** ที่ <http://localhost:8001> หรือ Swagger <http://localhost:8001/docs>
-7. (ทางเลือก) ไฟล์สำหรับ Power BI อยู่ใน `exports/` ดูวิธีทำใน [docs/powerbi_guide.md](docs/powerbi_guide.md)
+7. (ทางเลือก) ไฟล์สำหรับ Power BI อยู่ใน `exports/` ดูวิธีทำใน [docs/powerbi_guide.md](docs/powerbi_guide.md) เมื่อทำรายงานเสร็จแล้ว ใส่ลิงก์ฝังใน `POWERBI_EMBED_URL` ของไฟล์ `.env` เพื่อให้รายงานขึ้นในหน้า "เบื้องหลังระบบ" (ข้อ 7 ของคู่มือ)
 
 ไม่ควรรัน DAG backfill และ DAG รายเดือนพร้อมกัน เพราะทั้งสองเขียนตารางและไฟล์โมเดลชุดเดียวกัน
 

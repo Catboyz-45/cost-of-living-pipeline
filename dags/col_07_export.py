@@ -20,6 +20,12 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from col_00_settings import EXPORT_DIR, ML_MAX_LEVEL, POSTGRES_CONN_ID
 
 EXCEL_FILE = "cost_of_living_powerbi.xlsx"
+# ฉบับย่อสำหรับ Power BI บนเว็บ: Power BI นำเข้า Excel จาก OneDrive ได้ไม่เกินราว 30 MB
+# (ไฟล์เต็มเกินจะขึ้น ExcelViewWorkbookExceedsMaximiumSize) จึงตัดเหลือหมวดระดับ 1–2 และช่วงเวลาล่าสุด
+EXCEL_LITE_FILE = "cost_of_living_powerbi_lite.xlsx"
+LITE_MAX_LEVEL = 2
+LITE_FROM_YEAR = 2016                # ดัชนีภาคและรายปี ตั้งแต่ปีนี้
+LITE_PROVINCE_MONTHS = 24            # ดัชนีจังหวัด กี่เดือนล่าสุด
 EXCEL_MAX_ROWS = 1_048_575  # จำนวนแถวสูงสุดต่อ sheet ของ Excel (ไม่นับหัวตาราง)
 TEXT_COLUMNS = {
     "area_key", "area_code", "commodity_code", "province_code",
@@ -179,6 +185,7 @@ def export_powerbi(**_: Any) -> dict[str, Any]:
         connection.close()
 
     manifest["excel"] = _write_excel(manifest["files"])
+    manifest["excel_lite"] = _write_excel(manifest["files"], EXCEL_LITE_FILE, _lite_filter())
     (EXPORT_DIR / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -204,23 +211,57 @@ def _excel_value(column: str, text: str) -> Any:
         return text
 
 
-def _write_excel(files: dict[str, Any]) -> dict[str, Any]:
+def _lite_filter() -> Any:
+    """ตัวกรองแถวของไฟล์ฉบับย่อ: เก็บหมวดระดับ 1–2 และช่วงเวลาล่าสุดของตารางดัชนีขนาดใหญ่."""
+    with (EXPORT_DIR / "dim_commodity.csv").open(encoding="utf-8-sig", newline="") as handle:
+        levels = {row["commodity_code"]: int(row["level"]) for row in csv.DictReader(handle)}
+    # นับย้อนจากเดือนล่าสุดที่มีข้อมูลจังหวัด (ไม่ใช่วันนี้ เพราะ สนค. ประกาศช้ากว่า 1–2 เดือน)
+    with (EXPORT_DIR / "fact_cpi_province_monthly_recent.csv").open(encoding="utf-8-sig", newline="") as handle:
+        latest = max((row["period_date"][:7] for row in csv.DictReader(handle)), default="9999-12")
+    year, month = int(latest[:4]), int(latest[5:7])
+    months = year * 12 + month - 1 - (LITE_PROVINCE_MONTHS - 1)
+    province_from = f"{months // 12:04d}-{months % 12 + 1:02d}"
+    since = {
+        "fact_cpi_region_monthly.csv": ("period_date", f"{LITE_FROM_YEAR}-01"),
+        "fact_cpi_province_monthly_recent.csv": ("period_date", province_from),
+        "fact_cpi_yearly.csv": ("year_ce", str(LITE_FROM_YEAR)),
+    }
+
+    # ตัดหมวดระดับ 3 เฉพาะตารางดัชนีที่ใหญ่ ตารางเล็ก (เช่น correlation ที่ใช้หมวดย่อย) เก็บครบ
+    big_tables = set(since) | {"fact_forecast.csv", "fact_model_backtest.csv"}
+
+    def keep(file_name: str, record: dict[str, str]) -> bool:
+        if file_name not in big_tables:
+            return True
+        if levels.get(record["commodity_code"], 99) > LITE_MAX_LEVEL:
+            return False
+        if file_name in since:
+            column, start = since[file_name]
+            return record[column] >= start
+        return True
+
+    return keep
+
+
+def _write_excel(files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: Any = None) -> dict[str, Any]:
     """รวม CSV ทุกไฟล์เป็น Excel ไฟล์เดียว (หนึ่ง sheet ต่อหนึ่งตาราง).
+
+    keep_row(ชื่อไฟล์, แถวเป็น dict) ใช้กรองแถวสำหรับไฟล์ฉบับย่อ ถ้าไม่ส่งมาจะเก็บทุกแถว
 
     ใช้ xlsxwriter แบบ constant_memory ซึ่งเขียนทีละแถวลงดิสก์ ไม่เก็บทั้งไฟล์ไว้ใน RAM
     (โหมดนี้ต้องเขียนเรียงแถว จึงไม่ใช้ pandas.to_excel ที่เขียนทีละคอลัมน์)
     """
     import xlsxwriter
 
-    target = EXPORT_DIR / EXCEL_FILE
-    temporary = EXPORT_DIR / f".{EXCEL_FILE}.tmp"
+    target = EXPORT_DIR / excel_file
+    temporary = EXPORT_DIR / f".{excel_file}.tmp"
     sheets = {}
     workbook = xlsxwriter.Workbook(str(temporary), {"constant_memory": True})
     date_format = workbook.add_format({"num_format": "yyyy-mm-dd"})
     try:
         for file_name, info in files.items():
             sheet_name = file_name.removesuffix(".csv")[:31]  # ชื่อ sheet ยาวได้ไม่เกิน 31 ตัวอักษร
-            if info["rows"] > EXCEL_MAX_ROWS:
+            if keep_row is None and info["rows"] > EXCEL_MAX_ROWS:
                 print(f"WARN {file_name} has {info['rows']:,} rows; too many for one Excel sheet")
                 continue
             worksheet = workbook.add_worksheet(sheet_name)
@@ -229,7 +270,13 @@ def _write_excel(files: dict[str, Any]) -> dict[str, Any]:
                 header = next(reader)
                 worksheet.write_row(0, 0, header)
                 row_number = 0
-                for row_number, row in enumerate(reader, start=1):
+                for row in reader:
+                    if keep_row is not None and not keep_row(file_name, dict(zip(header, row))):
+                        continue
+                    row_number += 1
+                    if row_number > EXCEL_MAX_ROWS:
+                        print(f"WARN {file_name} truncated at {EXCEL_MAX_ROWS:,} rows")
+                        break
                     for column_number, (column, text) in enumerate(zip(header, row)):
                         value = _excel_value(column, text)
                         if value is None:
@@ -243,4 +290,4 @@ def _write_excel(files: dict[str, Any]) -> dict[str, Any]:
         workbook.close()
     os.replace(temporary, target)
     print(f"Wrote {target.name} with sheets {sheets}")
-    return {"file": EXCEL_FILE, "bytes": target.stat().st_size, "sheets": sheets}
+    return {"file": excel_file, "bytes": target.stat().st_size, "sheets": sheets}

@@ -1497,14 +1497,19 @@
     const tiles = $("data-tiles");
     tiles.replaceChildren();
     const v = summary.volume;
-    tile(tiles, { label: "แถวดัชนีราคา", value: compact(v.cpi_rows), sub: "ตาราง cpi_monthly", icon: "database", tone: "teal" });
+    // รวมแถวของทุกตารางที่เว็บนี้ใช้ (ดัชนี ราคาจริง ค่าแรง ผลพยากรณ์ ฯลฯ)
+    const totalRows = pipelineInfo.tables.reduce((sum, t) => sum + Number(t.rows), 0);
+    const tableRowsOf = (name) => Number((pipelineInfo.tables.find((t) => t.name === name) || {}).rows || 0);
+    const totalTile = tile(tiles, { label: "ข้อมูลทั้งหมดบนเว็บ", value: `${num(totalRows / 1e6, 2)} ล้านแถว`, sub: `${compact(totalRows)} แถว จาก ${pipelineInfo.tables.length} ตาราง · ดัชนีราคา ${num(tableRowsOf("cpi_monthly") / 1e6, 2)} ล้าน · ราคาขายปลีกรายวัน ${compact(tableRowsOf("retail_prices_daily"))}`, icon: "database", tone: "teal" });
+    countUp(totalTile.querySelector(".value"), totalRows / 1e6, { format: (x) => `${num(x, 2)} ล้านแถว` });
     // สนค. ไม่แยกดัชนีกรุงเทพฯ รายจังหวัด กทม. จึงใช้ดัชนี "กรุงเทพฯ และปริมณฑล" จากชุดข้อมูลภาค (+1)
     tile(tiles, { label: "พื้นที่", value: `${v.provinces + 1} จังหวัด`, sub: `${v.provinces} จังหวัด + กทม. (ใช้ดัชนี กทม.และปริมณฑล) · ทั้งประเทศและ 5 ภาค`, icon: "pin", tone: "pink" });
-    tile(tiles, { label: "หมวดสินค้า", value: compact(v.commodities), sub: "ระดับ 1–3", icon: "layers", tone: "purple" });
+    tile(tiles, { label: "หมวดสินค้า", value: `${compact(v.commodities)} หมวด`, sub: `หมวดหลัก ${v.commodities_l1} · หมวดรอง ${v.commodities_l2} · หมวดย่อย ${v.commodities_l3} · มีราคาจริงเป็นบาท ${compact(v.products)} สินค้า`, icon: "layers", tone: "purple" });
     tile(tiles, { label: "ข้อมูลย้อนหลังถึง", value: thMonth(v.first_period), icon: "calendar", tone: "amber", sub: `โหลดล่าสุด ${new Date(v.last_loaded).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}` });
     bars($("table-counts"), pipelineInfo.tables.map((t) => ({ label: t.name, value: t.rows, color: cssVar("--series-1") })), { format: (x) => compact(x), valueLabel: "แถว" });
     tableRows($("load-table"), [{ label: "แหล่งข้อมูล" }, { label: "แถว", num: true }, { label: "เวลา" }],
       pipelineInfo.loads.map((l) => ({ cells: [SOURCE_NAMES[l.source] || l.source, compact(l.rows_loaded), new Date(l.loaded_at).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })] })));
+    renderPowerBi();
     await renderModelQuality();
     bars($("farm-corr"), pipelineInfo.farm_correlations.slice(0, 10).map((c) => ({
       label: `${c.farm_item.replace(/ราคา|ที่เกษตรกรขายได้|รายเดือน|เฉลี่ย/g, "").trim()} · lag ${c.lag_months}`,
@@ -1512,6 +1517,30 @@
       color: cssVar("--series-3"),
       extra: [{ label: "จำนวนเดือน", value: String(c.sample_size) }],
     })), { format: (x) => num(x, 2), valueLabel: "r" });
+  }
+
+  // รายงาน Power BI ฝังด้วย iframe ถ้าตั้ง POWERBI_EMBED_URL ไว้ ไม่งั้นบอกวิธีตั้งค่า
+  async function renderPowerBi() {
+    const box = $("powerbi");
+    if (box.dataset.done) return;
+    box.dataset.done = "1";
+    const { embed_url: url } = await api("/api/powerbi");
+    if (!url) {
+      const note = document.createElement("p");
+      note.className = "powerbi-empty";
+      note.innerHTML = "ยังไม่ได้ใส่ลิงก์รายงาน · สร้างรายงานใน Power BI แล้วใช้ <b>File → Embed report</b> คัดลอกลิงก์มาใส่ <code>POWERBI_EMBED_URL</code> ในไฟล์ <code>.env</code> (ดู docs/powerbi_guide.md)";
+      box.replaceChildren(note);
+      return;
+    }
+    const frame = document.createElement("iframe");
+    frame.title = "รายงาน Power BI ค่าครองชีพไทย";
+    frame.src = url;
+    frame.loading = "lazy";
+    frame.allowFullscreen = true;
+    box.replaceChildren(frame);
+    const open = $("powerbi-open");
+    open.href = url;
+    open.hidden = false;
   }
 
   // ---------- router ----------

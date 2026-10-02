@@ -592,6 +592,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 .flow-step .muted { font-size: 13px; line-height: 1.5; }
 .flow-step .icon-plate { background: var(--surface); }
 .flow-step:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 22px; color: var(--muted); z-index: 1; }
+/* Power BI ฝังด้วย iframe สัดส่วน 16:10 (หน้ารายงาน 16:9 + แถบเครื่องมือด้านล่าง) */
+.powerbi { margin-top: 16px; }
+.powerbi iframe { display: block; width: 100%; aspect-ratio: 16 / 10; border: 1px solid var(--border); border-radius: 12px; background: var(--page); }
+.powerbi-empty { margin: 0; padding: 20px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.link-btn {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 999px;
+  border: 1px solid var(--ink); color: var(--ink); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+.link-btn:hover { background: var(--ink); color: var(--page); }
 .sources ul { padding-left: 18px; margin: 0; }
 .sources li { margin: 6px 0; }
 .sources a { color: var(--down); }

@@ -27,6 +27,7 @@ from col_08_features import FEATURE_COLUMNS, build_features, complete_rows, desc
 
 MODEL_PATH = Path("/models/cost_of_living/current_model.pkl")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+POWERBI_EMBED_URL = os.environ.get("POWERBI_EMBED_URL", "").strip()
 # รูปแบบ area_key เช่น "province:50" หรือ "region:TG" ป้องกันค่าแปลกปลอมตั้งแต่ต้นทาง
 AREA_KEY_PATTERN = re.compile(r"^(region|province):[0-9A-Z]{1,4}$")
 COMMODITY_PATTERN = re.compile(r"^[0-9]{5}$")
@@ -380,6 +381,10 @@ def dashboard_summary() -> dict[str, Any]:
         SELECT (SELECT COUNT(*) FROM cpi_monthly) AS cpi_rows,
                (SELECT COUNT(*) FROM dim_area WHERE area_type = 'province') AS provinces,
                (SELECT COUNT(*) FROM dim_commodity) AS commodities,
+               (SELECT COUNT(*) FROM dim_commodity WHERE level = 1) AS commodities_l1,
+               (SELECT COUNT(*) FROM dim_commodity WHERE level = 2) AS commodities_l2,
+               (SELECT COUNT(*) FROM dim_commodity WHERE level = 3) AS commodities_l3,
+               (SELECT COUNT(*) FROM dim_product) AS products,
                (SELECT MIN(period_date) FROM cpi_monthly) AS first_period,
                (SELECT MAX(loaded_at) FROM etl_load_log) AS last_loaded
         """
@@ -812,6 +817,13 @@ def pipeline() -> dict[str, Any]:
         """
     )
     return {"loads": loads, "tables": tables, "farm_correlations": correlations}
+
+
+@app.get("/api/powerbi")
+def powerbi() -> dict[str, Any]:
+    """ลิงก์ฝังรายงาน Power BI จาก env POWERBI_EMBED_URL (รับเฉพาะลิงก์ของ app.powerbi.com)."""
+    url = POWERBI_EMBED_URL if POWERBI_EMBED_URL.startswith("https://app.powerbi.com/") else None
+    return {"embed_url": url}
 
 
 # หน้า dashboard เป็นไฟล์ static (HTML/CSS/JS) ในโฟลเดอร์ static/
