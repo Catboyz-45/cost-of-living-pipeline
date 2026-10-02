@@ -1,0 +1,8 @@
+# บังคับท้ายบรรทัดแบบ LF ทุกเครื่อง: ถ้า Windows แปลงเป็น CRLF ตอนโคลน สคริปต์ bash, .env และ YAML จะอ่านค่าผิด (มี \r ติดท้าย)
+* text=auto eol=lf
+*.sh text eol=lf
+*.jpg binary
+*.png binary
+*.gz binary
+*.pkl binary
+*.dump binary

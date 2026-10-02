@@ -97,6 +97,8 @@ tests/test_features.py         # Unit test: feature engineering
 tests/test_scrape.py           # Unit test: ตัวอ่าน HTML ของ web scraping
 tests/test_fuel.py             # Unit test: ตัวอ่านผลลัพธ์ SOAP ราคาน้ำมัน
 scripts/check_demo.sh          # เช็กความพร้อมก่อนโชว์สด (คอนเทนเนอร์ ข้อมูล โมเดล หน้าเว็บ)
+scripts/restore_snapshot.sh    # โหลดข้อมูลสำเร็จรูป (ฐานข้อมูล + โมเดล) จาก GitHub Release แทนการรัน backfill
+scripts/create_snapshot.sh     # สร้างไฟล์ snapshot ใหม่สำหรับแนบใน Release
 DESIGN.md                      # แนวดีไซน์ "ใบเสร็จตลาด" (สี ฟอนต์ กฎการใช้สี)
 ```
 
@@ -199,13 +201,36 @@ API ราคาของกรมการค้าภายในล่มเ�
    docker compose up -d --build
    ```
 
+   ครั้งแรกใช้เวลาหลายนาที เพราะต้องดาวน์โหลด image และติดตั้ง package ของ Python ทุกครั้งที่ container เริ่ม ระหว่างนี้ webserver อาจขึ้นสถานะ `starting`/`unhealthy` สักพัก
+
+   **ทางลัด (แนะนำสำหรับคนที่โคลนไปลองรัน):** โหลดข้อมูลสำเร็จรูปแทนการรัน backfill 2 ชั่วโมง ได้ฐานข้อมูลครบและไฟล์โมเดลใน 1–3 นาที (ดาวน์โหลด ~30 MB จาก [GitHub Release](https://github.com/Catboyz-45/cost-of-living-pipeline/releases/tag/data-2026-10-02)) แล้วข้ามไปข้อ 6 ได้เลย บน Windows ให้รันใน Git Bash หรือ WSL
+
+   ```bash
+   bash scripts/restore_snapshot.sh
+   ```
+
 3. เปิด Airflow ที่ <http://localhost:8080> บัญชี development คือ `airflow / airflow`
-4. Unpause และ Trigger `thai_cost_of_living_backfill` **หนึ่งครั้ง** ครั้งแรกใช้เวลาประมาณหนึ่งชั่วโมง ขึ้นกับความเร็ว API ของ สนค.
+4. Unpause และ Trigger `thai_cost_of_living_backfill` **หนึ่งครั้ง** ครั้งแรกใช้เวลาประมาณ 2 ชั่วโมง ขึ้นกับความเร็ว API ของ สนค. และเว็บกรมการค้าภายใน (ข้ามข้อนี้ได้ถ้าใช้ทางลัดด้านบน)
 5. หลังรันเสร็จ Unpause `thai_cost_of_living_monthly` ให้รันเองทุกเดือน
 6. เปิด **Dashboard** ที่ <http://localhost:8001> หรือ Swagger <http://localhost:8001/docs>
 7. (ทางเลือก) ไฟล์สำหรับ Power BI อยู่ใน `exports/` ดูวิธีทำใน [docs/powerbi_guide.md](docs/powerbi_guide.md)
 
 ไม่ควรรัน DAG backfill และ DAG รายเดือนพร้อมกัน เพราะทั้งสองเขียนตารางและไฟล์โมเดลชุดเดียวกัน
+
+## ถ้าโคลนไปรันแล้วไม่ขึ้น
+
+| อาการ / ข้อความ error | สาเหตุ | วิธีแก้ |
+|---|---|---|
+| `Cannot connect to the Docker daemon` | Docker Desktop ยังไม่เปิด | เปิด Docker Desktop รอจนขึ้น Running แล้วสั่งใหม่ |
+| `Conflict. The container name "/airflow_webserver" (หรือ /postgres_target) is already in use` | ไฟล์นี้ตั้งชื่อ container ตายตัว ถ้าเคยรัน workshop ที่ใช้ชื่อเดียวกัน Docker จะไม่ยอมสร้างซ้ำ | ไปที่โฟลเดอร์ workshop เก่าแล้วสั่ง `docker compose down` หรือดูชื่อด้วย `docker ps -a` แล้วลบตัวที่ชนด้วย `docker rm -f ชื่อ` (ข้อมูลใน volume ของ workshop ยังอยู่) |
+| `Bind for 0.0.0.0:8080 failed: port is already allocated` (หรือ 5433, 8001) | มีโปรแกรมหรือ Airflow ตัวอื่นใช้พอร์ตนั้นอยู่ | หยุดตัวที่ใช้พอร์ตอยู่ (`docker ps` ดูว่าเป็นตัวไหน) หรือแก้เลขพอร์ตฝั่งซ้ายใน `docker-compose.yaml` เช่น `"8081:8080"` |
+| `airflow-init` เตือนเรื่อง memory/CPU หรือ webserver/scheduler รีสตาร์ตวนไม่หยุด | Docker Desktop ได้ RAM น้อยเกินไป | Docker Desktop → Settings → Resources ให้ RAM อย่างน้อย 4 GB (แนะนำ 6–8 GB), CPU 2 คอร์, ดิสก์ว่าง 10 GB |
+| `service "airflow-init" didn't complete successfully` | init ล้มเหลว | ดูสาเหตุด้วย `docker compose logs airflow-init` ส่วนใหญ่เป็นเรื่อง RAM หรือสิทธิ์โฟลเดอร์ บน Linux ให้ตั้ง `AIRFLOW_UID` ใน `.env` เป็นผลของ `id -u` |
+| บน Windows: `invalid user`, `\r: command not found`, `bad interpreter` | ไฟล์ถูกแปลงท้ายบรรทัดเป็น CRLF ตอนโคลน | repo มี `.gitattributes` บังคับ LF แล้ว ถ้าโคลนก่อนหน้านี้ให้โคลนใหม่ หรือรัน `git rm --cached -r . && git reset --hard` |
+| เว็บ <http://localhost:8001> เปิดได้แต่ขึ้น "โหลดข้อมูลไม่สำเร็จ" / `No deployed model yet` | ฐานข้อมูลยังว่าง ข้อมูลไม่ได้อยู่ใน Git | รัน `bash scripts/restore_snapshot.sh` หรือรัน DAG `thai_cost_of_living_backfill` จนเสร็จ (~2 ชั่วโมง) |
+| Airflow ขึ้นช้ามากครั้งแรก | กำลังติดตั้ง package ของ Python ใน container | รอ 3–5 นาที ดูความคืบหน้าด้วย `docker compose logs -f airflow-webserver` |
+
+เช็กทั้งระบบได้ด้วย `bash scripts/check_demo.sh` (บอกวิธีแก้ทุกข้อที่ไม่ผ่าน)
 
 ## Dashboard
 

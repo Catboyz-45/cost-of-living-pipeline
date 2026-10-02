@@ -35,7 +35,7 @@ echo "3) ข้อมูลในฐานข้อมูล"
 check_rows() {  # ชื่อตาราง, จำนวนขั้นต่ำ, คำอธิบาย
   rows=$(sql "SELECT COUNT(*) FROM $1" || echo 0)
   if [ "${rows:-0}" -ge "$2" ]; then ok "$3: $(printf "%'d" "$rows") แถว"
-  else bad "$3: ${rows:-0} แถว (ต้องมีอย่างน้อย $2)" "ถ้าข้อมูลหาย ต้องรัน DAG thai_cost_of_living_backfill ใหม่ (ประมาณ 2 ชั่วโมง)"; fi
+  else bad "$3: ${rows:-0} แถว (ต้องมีอย่างน้อย $2)" "โหลดข้อมูลสำเร็จรูป: bash scripts/restore_snapshot.sh (1-3 นาที) หรือรัน DAG thai_cost_of_living_backfill ใหม่ (ประมาณ 2 ชั่วโมง)"; fi
 }
 check_rows cpi_monthly 1000000 "ดัชนีราคา (cpi_monthly)"
 check_rows retail_prices_daily 100000 "ราคาจริงรายวัน (retail_prices_daily)"
