@@ -237,7 +237,23 @@
   function tableRows(table, headers, rows, onClick) {
     table.replaceChildren();
     const head = el("tr");
-    for (const header of headers) { const th = el("th", header.num ? "num" : "", header.label); head.appendChild(th); }
+    for (const header of headers) {
+      const th = el("th", header.num ? "num" : "");
+      // หัวคอลัมน์ที่เรียงได้: header.sort = { dir: "desc" | "asc" | null, onClick }
+      if (header.sort) {
+        const dir = header.sort.dir;
+        th.setAttribute("aria-sort", dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none");
+        const button = el("button", `th-sort${dir ? " active" : ""}`);
+        button.type = "button";
+        button.title = dir === "desc" ? "เรียงจากน้อยไปมาก" : "เรียงจากมากไปน้อย";
+        button.append(document.createTextNode(header.label), el("span", "th-arrow", dir === "asc" ? "▲" : dir === "desc" ? "▼" : "↕"));
+        button.addEventListener("click", header.sort.onClick);
+        th.appendChild(button);
+      } else {
+        th.textContent = header.label;
+      }
+      head.appendChild(th);
+    }
     const thead = el("thead"); thead.appendChild(head); table.appendChild(thead);
     const tbody = el("tbody");
     for (const row of rows) {
@@ -815,8 +831,11 @@
   // ---------- แถบ AI บนหน้าแรก ----------
   function renderAiBanner(fc, products) {
     const card = $("ai-banner");
+    const stage = $("ai-stage");
     card.replaceChildren();
-    if (!fc) { card.hidden = true; return; }
+    if (!fc) { stage.hidden = true; return; }
+    // บอทโผล่หลังมีตัวเลขในการ์ดแล้ว ไม่โผล่ค้างอยู่บนการ์ดว่าง
+    stage.classList.add("peek");
     const value = el("div", "ai-value", `ของโดยรวมจะ${fc.predicted_change_pct >= 0 ? "แพงขึ้นอีก" : "ถูกลง"} `);
     const aiPct = el("b");
     value.appendChild(aiPct);
@@ -1050,11 +1069,37 @@
   // ตารางค่าแรงแสดง 10 จังหวัดแรกก่อน กดปุ่มเพื่อดูครบทุกจังหวัด
   const WAGE_ROWS = 10;
   let wageShowAll = false;
+  // เรียงตามคอลัมน์ที่กด: กดครั้งแรกมากไปน้อย กดซ้ำสลับเป็นน้อยไปมาก (ยังไม่กด = ลำดับจาก API)
+  let wageSort = { key: null, dir: null };
   function drawWageTable(provinces) {
     const select = $("wage-province");
+    const sortHeader = (label, key) => ({
+      label, num: true,
+      sort: {
+        dir: wageSort.key === key ? wageSort.dir : null,
+        onClick: () => {
+          wageSort = { key, dir: wageSort.key === key && wageSort.dir === "desc" ? "asc" : "desc" };
+          drawWageTable(provinces);
+        },
+      },
+    });
+    const sorted = [...provinces];
+    if (wageSort.key) {
+      const sign = wageSort.dir === "asc" ? 1 : -1;
+      // จังหวัดที่ไม่มีค่าไว้ท้ายตารางเสมอ ไม่ว่าเรียงทางไหน
+      sorted.sort((a, b) => {
+        const x = a[wageSort.key], y = b[wageSort.key];
+        if (x === null || x === undefined) return 1;
+        if (y === null || y === undefined) return -1;
+        return (x - y) * sign;
+      });
+    }
     tableRows($("wage-table"), [
-      { label: "จังหวัด" }, { label: "ค่าแรงวันละ", num: true }, { label: "หักของแพงแล้วเหลือ (เงินปี 2566)", num: true }, { label: "ซื้อของได้มากขึ้น/น้อยลง", num: true },
-    ], (wageShowAll ? provinces : provinces.slice(0, WAGE_ROWS)).map((p) => ({ code: p.province_code, cells: [p.province_name, `${num(p.nominal_wage, 0)} ฿`, `${num(p.real_wage, 0)} ฿`, deltaNode(p.real_change_pct, "%", false)] })),
+      { label: "จังหวัด" },
+      sortHeader("ค่าแรงวันละ", "nominal_wage"),
+      sortHeader("หักของแพงแล้วเหลือ (เงินปี 2566)", "real_wage"),
+      sortHeader("ซื้อของได้มากขึ้น/น้อยลง", "real_change_pct"),
+    ], (wageShowAll ? sorted : sorted.slice(0, WAGE_ROWS)).map((p) => ({ code: p.province_code, cells: [p.province_name, `${num(p.nominal_wage, 0)} ฿`, `${num(p.real_wage, 0)} ฿`, deltaNode(p.real_change_pct, "%", false)] })),
     (row) => { select.value = row.code; drawWage(); window.scrollTo({ top: 0, behavior: "smooth" }); });
     const more = $("wage-more");
     more.hidden = wageShowAll || provinces.length <= WAGE_ROWS;
@@ -1218,6 +1263,52 @@
     return box;
   }
 
+  // ตอนกดใส่ตะกร้า: รูปสินค้าทั้งรูปหดเล็กลงแล้วพุ่งเข้าตะกร้าที่มองเห็นอยู่ ตะกร้ายุบรับ
+  // ปลายทาง: แถบ "ดูตะกร้า" (มือถือ) > หัวกล่องตะกร้าถ้าอยู่ในจอ > ไอคอนตะกร้าบนเมนู
+  function cartTarget() {
+    const visible = (node) => {
+      if (!node) return false;
+      const r = node.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
+    };
+    const bar = $("cart-bar");
+    if (visible(bar)) return bar;
+    const head = document.querySelector("#cart .cart-head h2");
+    if (visible(head)) return head;
+    return document.querySelector('.nav a[data-page="basket"]');
+  }
+  function flyToCart(thumb) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const target = cartTarget();
+    if (!target) return;
+    const from = thumb.getBoundingClientRect();
+    const to = target.getBoundingClientRect();
+    const ghost = thumb.cloneNode(true);
+    ghost.querySelectorAll(".shop-tag, .shop-ai").forEach((node) => node.remove());
+    ghost.classList.add("fly-ghost");
+    Object.assign(ghost.style, { position: "fixed", aspectRatio: "auto", left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` });
+    document.body.appendChild(ghost);
+    // หดเหลือวงกลมราว 28px ที่กึ่งกลางปลายทาง (ฝั่งซ้ายของปุ่ม/หัวตะกร้า ตรงไอคอน)
+    const size = 28;
+    const endX = to.left + Math.min(24, to.width / 2) - (from.left + from.width / 2);
+    const endY = to.top + to.height / 2 - (from.top + from.height / 2);
+    const scale = size / Math.max(from.width, from.height);
+    const flight = ghost.animate([
+      { transform: "translate(0, 0) scale(1)", borderRadius: "16px", opacity: 1 },
+      { transform: `translate(${endX}px, ${endY}px) scale(${scale})`, borderRadius: "50%", opacity: 0.7 },
+    ], { duration: 550, easing: "cubic-bezier(.6, 0, .4, 1)" });
+    // สำรองไว้: ถ้าแท็บถูกซ่อนกลางทาง onfinish อาจไม่ถูกเรียก รูปจะไม่ค้างบนจอ
+    setTimeout(() => ghost.remove(), 1000);
+    flight.onfinish = () => {
+      ghost.remove();
+      target.animate([
+        { transform: "translateY(0) scale(1)" },
+        { transform: "translateY(3px) scale(.94)" },
+        { transform: "translateY(0) scale(1)" },
+      ], { duration: 280, easing: "ease-out" });
+    };
+  }
+
   // การ์ดสินค้าแบบร้านค้าออนไลน์: รูป (ไอคอน), ชื่อ, ราคาวันนี้, ราคาปีก่อนขีดฆ่า + ป้าย %, ปุ่มใส่ตะกร้า
   function shopCard(p) {
     const look = productLook(p.label);
@@ -1255,6 +1346,7 @@
       const add = withIcon(el("button", "shop-add", "ใส่ตะกร้า"), "cart");
       add.type = "button";
       add.addEventListener("click", () => {
+        flyToCart(thumb);
         addToBasket(p);
         shop.cards.get(p.product_id)?.querySelector(".stepper button:last-child")?.focus();
       });

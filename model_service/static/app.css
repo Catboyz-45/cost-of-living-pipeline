@@ -50,7 +50,8 @@ body {
 a { color: var(--ink); }
 a:hover { color: var(--up); }
 code { font-family: var(--mono); font-size: .85em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
-h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
+/* ภาษาไทยมีสระและวรรณยุกต์ซ้อนด้านบน: ห้ามบีบระยะตัวอักษร ไม่งั้นไปชนหางของ ป ฝ ฟ */
+h1, h2, h3 { font-family: var(--display); letter-spacing: 0; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .app > *, .hero-grid > *, .map-layout > *, .grid-2 > *, .tiles > *, .fc-grid > *, .dish-layout > *, .bt-layout > *, .card { min-width: 0; }
@@ -103,7 +104,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 }
 .page-ai .eyebrow, .page-ai .kicker { color: var(--ai); }
 .page-head { display: flex; flex-direction: column; gap: 12px; max-width: 920px; }
-.page-head h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); font-weight: 700; line-height: 1.15; }
+.page-head h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); font-weight: 700; line-height: 1.35; }
 .page-head p { margin: 0; font-size: 18px; line-height: 1.6; color: var(--ink-2); }
 .takeaway b, .lede b { color: var(--ink); }
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -133,7 +134,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 /* ---------- หน้าแรก: พาดหัว + การ์ด AI ---------- */
 .hero-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px; align-items: stretch; }
 .headline { display: flex; flex-direction: column; gap: 24px; padding: 8px 0; }
-.headline h1 { margin: 0; font-size: clamp(36px, 4.4vw, 60px); font-weight: 700; line-height: 1.12; }
+.headline h1 { margin: 0; font-size: clamp(36px, 4.4vw, 60px); font-weight: 700; line-height: 1.35; }
 .headline h1 .line { white-space: nowrap; }
 .headline h1 .num { font-family: var(--mono); font-weight: 600; letter-spacing: -.02em; }
 .headline h1 .num.up { color: var(--up); }
@@ -146,6 +147,20 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 .ai-card {
   background: var(--surface); border: 2px dashed var(--ai); border-radius: var(--radius); padding: 32px;
   display: flex; flex-direction: column; gap: 16px; color: var(--ink);
+}
+/* บอทอยู่หลังการ์ด (z-index ต่ำกว่า) เลื่อนขึ้นจนเห็นแค่เสาอากาศกับตา แล้วขยับขึ้นลงเบา ๆ */
+.ai-stage { position: relative; display: flex; flex-direction: column; }
+.ai-stage > .ai-card { position: relative; z-index: 1; flex: 1; }
+.ai-bot { position: absolute; z-index: 0; right: 40px; top: -63px; width: 96px; height: 144px; transform: translateY(105px); }
+.ai-stage.peek .ai-bot { animation: bot-peek 1.2s ease-out .3s both, bot-bob 2.4s ease-in-out 1.6s infinite; }
+.ai-bot-eyes { transform-box: fill-box; transform-origin: center; }
+.ai-stage.peek .ai-bot-eyes { animation: bot-blink 3.2s 1.8s infinite; }
+@keyframes bot-peek { 0% { transform: translateY(105px); } 40% { transform: translateY(0); } 55% { transform: translateY(12px); } 100% { transform: translateY(0); } }
+@keyframes bot-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes bot-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .ai-stage.peek .ai-bot, .ai-stage.peek .ai-bot-eyes { animation: none; }
+  .ai-stage.peek .ai-bot { transform: none; }
 }
 .ai-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ai); }
 .ai-label::before, .ai-button::before, .ai-link::after, .search::before {
@@ -424,6 +439,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 }
 .shop-card:hover { transform: translateY(-2px); border-color: var(--ink); }
 .shop-card.in-cart { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+/* รูปสินค้าที่ลอยเข้าตะกร้า (JS ตั้งตำแหน่งและขนาดเริ่มต้น) */
+.fly-ghost {
+  position: fixed; z-index: 1000; margin: 0; pointer-events: none; overflow: hidden;
+  transform-origin: center; will-change: transform; border-radius: 16px;
+}
 .shop-thumb { position: relative; aspect-ratio: 4 / 3; background: var(--surface-2); }
 .shop-thumb::before {
   content: ""; position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; background: var(--ink-2);
@@ -576,6 +596,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 .table th { position: sticky; top: 0; background: var(--surface); text-align: left; color: var(--ink-2); font-weight: 500; font-size: 13px; padding: 10px 8px; border-bottom: 1px solid var(--border); }
 .table td { padding: 11px 8px; border-bottom: 1px solid var(--grid); }
 .table td.num, .table th.num { text-align: right; }
+/* หัวคอลัมน์ที่กดเรียงได้ */
+.th-sort {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 6px; margin: -6px -6px;
+  border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.th-sort:hover { background: var(--surface-2); color: var(--ink); }
+.th-sort.active { color: var(--ink); font-weight: 600; }
+.th-arrow { font-size: 11px; color: var(--muted); }
+.th-sort.active .th-arrow { color: var(--ai); }
 .table td.num { font-family: var(--mono); font-size: 13px; }
 .table tr:hover td { background: var(--page); }
 .table tr.clickable { cursor: pointer; }
@@ -622,6 +651,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 }
 @media (max-width: 1100px) {
   .hero-grid, .map-layout, .grid-2, .fc-grid, .dish-layout, .bt-layout, .cat-card { grid-template-columns: minmax(0, 1fr); }
+  .ai-stage { margin-top: 48px; }  /* เผื่อที่ให้หัวบอทตอนการ์ดอยู่ใต้กราฟ */
   .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-strip .tile:nth-child(3) { border-left: 0; }
   .stat-strip .tile:nth-child(n+3) { border-top: 1px solid var(--border); }
@@ -657,7 +687,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .main { padding: 24px 16px 40px; }
   .page { gap: 40px; }
   .headline { gap: 16px; }
-  .headline h1 { font-size: min(7.4vw, 32px); line-height: 1.25; }
+  .headline h1 { font-size: min(7.4vw, 32px); line-height: 1.4; }
   .lede, .page-head p { font-size: 15px; }
   .page-head h1 { font-size: 30px; }
   .section-head h2, .cat-text h2 { font-size: 24px; }

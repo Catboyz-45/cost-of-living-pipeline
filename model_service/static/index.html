@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>ค่าครองชีพไทย</title>
-<link rel="icon" type="image/png" href="/static/favicon.png?v=46">
-<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=46">
+<link rel="icon" type="image/png" href="/static/favicon.png?v=52">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=52">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css?v=46">
+<link rel="stylesheet" href="/static/app.css?v=52">
 </head>
 <body>
 <div class="app">
   <header class="topbar">
     <a class="brand" href="#overview">
-      <img class="brand-mark" src="/static/logo.png?v=46" alt="" width="40" height="40">
+      <img class="brand-mark" src="/static/logo.png?v=52" alt="" width="40" height="40">
       <span class="brand-text">
         <strong>ค่าครองชีพไทย</strong>
         <small id="freshness">กำลังโหลด…</small>
@@ -48,7 +48,18 @@
             <div id="chart-yoy"></div>
           </div>
         </div>
-        <article class="ai-card" id="ai-banner"></article>
+        <div class="ai-stage" id="ai-stage">
+          <!-- บอท AI ซ่อนอยู่หลังการ์ด แล้วโผล่ครึ่งหัวออกมาเหนือขอบบน -->
+          <svg class="ai-bot" viewBox="0 0 64 96" width="64" height="96" aria-hidden="true">
+            <line x1="32" y1="4" x2="32" y2="14" stroke="#534AB7" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="32" cy="5" r="4" fill="#AFA9EC"/>
+            <rect x="6" y="14" width="52" height="40" rx="14" fill="#534AB7"/>
+            <rect x="13" y="22" width="38" height="23" rx="9" fill="#EEEDFE"/>
+            <g class="ai-bot-eyes"><rect x="21" y="29" width="6" height="9" rx="3" fill="#26215C"/><rect x="37" y="29" width="6" height="9" rx="3" fill="#26215C"/></g>
+            <rect x="14" y="54" width="36" height="34" rx="10" fill="#3C3489"/>
+          </svg>
+          <article class="ai-card" id="ai-banner"></article>
+        </div>
       </div>
 
       <section class="stat-strip" id="overview-tiles" aria-label="ตัวเลขสำคัญ"></section>
@@ -338,8 +349,8 @@
   </main>
 </div>
 <div class="tooltip" id="tooltip" role="status" hidden></div>
-<script src="/static/icons.js?v=46"></script>
-<script src="/static/charts.js?v=46"></script>
-<script src="/static/app.js?v=46"></script>
+<script src="/static/icons.js?v=52"></script>
+<script src="/static/charts.js?v=52"></script>
+<script src="/static/app.js?v=52"></script>
 </body>
 </html>
