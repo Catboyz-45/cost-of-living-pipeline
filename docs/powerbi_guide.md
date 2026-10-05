@@ -34,6 +34,26 @@ Power BI บนเว็บ (app.powerbi.com) ต่อ PostgreSQL ในเค�
 4. เปิด semantic model นั้น → **Open data model** เพื่อโยง Relationship ตามข้อ 3
 5. กด **Create report** (หรือ **Explore this data** → **Auto-create**) เพื่อเริ่มวางกราฟ
 
+### รายงานสำเร็จรูป: `powerbi/cost_of_living_dashboard.pbip`
+
+โปรเจกต์มีรายงาน Power BI ที่ทำไว้แล้วในโฟลเดอร์ `powerbi/` (รูปแบบ Power BI Project เก็บเป็นไฟล์ข้อความ จึงอยู่ใน Git ได้)
+
+- ชื่อตารางและคอลัมน์เป็นภาษาไทย ชุดเดียวกับไฟล์ Excel ที่โหลดจากเว็บ (ข้อมูลยังอ่านจากไฟล์ lite ชื่ออังกฤษ จึงไม่กระทบ Relationship)
+- มี measure ภาษาไทย 21 ตัว และรายงาน 4 หน้า: ของแพงขึ้นแค่ไหน · จังหวัดไหนแพงเร็ว · เดือนหน้าเป็นไง · ค่าแรงพอไหม
+- เปิดครั้งแรกบนเครื่องใหม่ให้กด **Refresh** (ไฟล์อ่านข้อมูลจาก `D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx` ถ้าโปรเจกต์อยู่ที่อื่น แก้ path ใน **Transform data → Data source settings**)
+- อัปเดตข้อมูล: หลัง DAG สร้างไฟล์ lite ใหม่ เปิด `.pbip` → **Refresh** → **Publish** ทับของเดิมใน My workspace
+
+ชื่อใน measure ของข้อ 4 ด้านล่างเป็นชื่ออังกฤษ ใช้กับโมเดลที่สร้างเองจากไฟล์ lite เท่านั้น
+
+### ทางเลือก: Power BI Desktop (ไม่ต้องใช้ OneDrive)
+
+1. เปิด Power BI Desktop → **Excel workbook** → เลือก `exports/cost_of_living_powerbi_lite.xlsx`
+2. หน้า Navigator ติ๊กครบทั้ง 15 sheet → **Load**
+3. **ตรวจหัวตาราง:** ตาราง `dim_area` และ `fact_price_estimates` อาจโหลดมาเป็น `Column1, Column2, …` เพราะ Power BI เดาไม่ได้ว่าแถวแรกเป็นหัวตาราง (ถ้าไม่แก้ จะโยง Relationship ด้วย `area_key` และ `product_id` ไม่ได้)
+   แก้ที่ **Transform data** → เลือกตารางนั้น → **Use First Row as Headers** → **Close & Apply**
+4. ไปที่ **Model view** → **Manage relationships** ตรวจว่ามีครบตามตารางข้อ 3 (หลังแก้ข้อ 3 Power BI มักโยงให้เองครบ ถ้าขาดให้กด **New relationship**)
+5. บันทึกเป็น `exports/cost_of_living_dashboard.pbix` แล้วกด **Publish** ถ้าจะขึ้น Power BI บนเว็บ
+
 ## 3. Relationship (Model view)
 
 | จาก (many) | ไป (one) | คอลัมน์ |

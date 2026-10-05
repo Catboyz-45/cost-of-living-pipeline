@@ -1,0 +1,126 @@
+relationship 2e63a69b-82bd-4475-a1fa-099f582ef21b
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'ดัชนีราคา จังหวัด 36 เดือน'.เดือน
+	toColumn: LocalDateTable_5294782a-c148-4ce8-ac93-d1f5c726a98b.Date
+
+relationship 73114ddc-086f-48c5-a572-cc36875d4652
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'ดัชนีราคา ประเทศและภาค'.เดือน
+	toColumn: LocalDateTable_df996de3-3477-48e3-a8b9-2ec408110a3f.Date
+
+relationship 542db80f-2964-439e-9e6f-f5b19a1ac509
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ราคาหน้าฟาร์ม.เดือน
+	toColumn: LocalDateTable_36d0aac9-b09f-4acd-a29c-44b24995743f.Date
+
+relationship 7c5ff7ee-def4-441a-a398-4b6b3024040a
+	joinOnDateBehavior: datePartOnly
+	fromColumn: พยากรณ์เดือนหน้า.เดือนฐาน
+	toColumn: LocalDateTable_48474b49-a952-4bd8-9fb2-2fe0757d7d5e.Date
+
+relationship 7356396e-7b1b-493f-ae7d-dc366134c88f
+	joinOnDateBehavior: datePartOnly
+	fromColumn: พยากรณ์เดือนหน้า.เดือนที่ทาย
+	toColumn: LocalDateTable_71fca037-6d58-48e9-b464-b9a08696689b.Date
+
+relationship ddd6dd62-eae5-406b-a8a0-a366e55b3926
+	joinOnDateBehavior: datePartOnly
+	fromColumn: พยากรณ์เดือนหน้า.เวลาที่ทาย
+	toColumn: LocalDateTable_351948cb-9841-409f-8687-ed02e0f82811.Date
+
+relationship 26fe22c2-c124-49c0-840e-80277cf6c74f
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ผลทายย้อนหลังของโมเดล.เดือนฐาน
+	toColumn: LocalDateTable_7175ffdd-99e3-4774-81fb-6cc2b704fa61.Date
+
+relationship 52cc521f-3069-4ac8-820d-cdf8b9696559
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ผลทายย้อนหลังของโมเดล.เดือนที่ทาย
+	toColumn: LocalDateTable_804ca46a-ca8d-4ead-948e-9cf66a078d5f.Date
+
+relationship eb69bd14-debb-43a0-b6f1-898485a2d83d
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ผลทายย้อนหลังของโมเดล.โมเดลเทรนถึงเดือน
+	toColumn: LocalDateTable_ac6a27ef-93d4-4a1b-937e-6edc126db679.Date
+
+relationship 8fb2236c-d1fa-40e6-8ea4-9d4bc894c966
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ค่าแรงที่แท้จริง.เดือน
+	toColumn: LocalDateTable_d3983674-9273-4b30-8066-5ea51c87ae4d.Date
+
+relationship a6a5af7a-3553-4901-a85b-11c160112acc
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ราคาขายปลีกรายเดือน.เดือน
+	toColumn: LocalDateTable_d75ddc91-f210-4e41-b1ae-47ba9c7dad2e.Date
+
+relationship dcfddcd7-2246-43a0-b558-a9dc57c18c37
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ความแม่นยำของโมเดล.เวลาที่เทรน
+	toColumn: LocalDateTable_064821a5-554b-482b-968b-aa379463d59d.Date
+
+relationship AutoDetected_30fc121a-3aad-4335-a481-74d79bd90746
+	fromColumn: 'ดัชนีราคา จังหวัด 36 เดือน'.รหัสหมวดสินค้า
+	toColumn: หมวดสินค้า.รหัสหมวดสินค้า
+
+relationship AutoDetected_c16d0045-d8ac-43d9-bd7d-8c8167275b62
+	fromColumn: 'ดัชนีราคา ประเทศและภาค'.รหัสหมวดสินค้า
+	toColumn: หมวดสินค้า.รหัสหมวดสินค้า
+
+relationship AutoDetected_4b12837a-51cb-432a-af16-6a6269dd4707
+	fromColumn: ดัชนีราคารายปี.รหัสหมวดสินค้า
+	toColumn: หมวดสินค้า.รหัสหมวดสินค้า
+
+relationship AutoDetected_9caa2b34-663c-4822-9b61-e60c5efb1183
+	fromColumn: ความสัมพันธ์ราคาฟาร์ม-ปลีก.รหัสหมวดสินค้า
+	toColumn: หมวดสินค้า.รหัสหมวดสินค้า
+
+relationship AutoDetected_61a2534c-6666-4d8a-a3d9-7afa5cc96031
+	fromColumn: พยากรณ์เดือนหน้า.รหัสหมวดสินค้า
+	toColumn: หมวดสินค้า.รหัสหมวดสินค้า
+
+relationship AutoDetected_dd294f3d-df11-4f0f-901c-130c4a41bb3d
+	fromColumn: ผลทายย้อนหลังของโมเดล.รหัสหมวดสินค้า
+	toColumn: หมวดสินค้า.รหัสหมวดสินค้า
+
+relationship AutoDetected_2aa047e3-2bc4-4780-a461-c8e8e18d75f1
+	fromColumn: ราคาขายปลีกรายเดือน.รหัสสินค้า
+	toColumn: สินค้า.รหัสสินค้า
+
+relationship b14097ec-e2b1-403b-918f-c3ad83b889a4
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ราคาสินค้าเป็นบาท.เดือน
+	toColumn: LocalDateTable_b77b24ca-fd1b-4ef5-bac4-e304772baa42.Date
+
+relationship 2e32987f-cfce-432e-9af9-a02a462bddb5
+	joinOnDateBehavior: datePartOnly
+	fromColumn: ราคาสินค้าเป็นบาท.เดือนราคาอ้างอิง
+	toColumn: LocalDateTable_45c09b00-c327-4d1f-85f2-e747a30c2884.Date
+
+relationship AutoDetected_a391971a-6d2b-41e3-ade8-d408bbf4e72f
+	fromColumn: 'ดัชนีราคา จังหวัด 36 เดือน'.'รหัสพื้นที่ (คีย์)'
+	toColumn: พื้นที่.'รหัสพื้นที่ (คีย์)'
+
+relationship AutoDetected_2ae33ad4-6bf6-416b-a696-ac91addfb624
+	fromColumn: 'ดัชนีราคา ประเทศและภาค'.'รหัสพื้นที่ (คีย์)'
+	toColumn: พื้นที่.'รหัสพื้นที่ (คีย์)'
+
+relationship AutoDetected_e28138f8-b688-43fd-b5fe-299697e23235
+	fromColumn: ดัชนีราคารายปี.'รหัสพื้นที่ (คีย์)'
+	toColumn: พื้นที่.'รหัสพื้นที่ (คีย์)'
+
+relationship AutoDetected_1b5a5e46-c2b8-4952-937f-00cdc279d544
+	fromColumn: พยากรณ์เดือนหน้า.'รหัสพื้นที่ (คีย์)'
+	toColumn: พื้นที่.'รหัสพื้นที่ (คีย์)'
+
+relationship AutoDetected_c5fec615-4e68-45fa-a68a-320e2627064b
+	fromColumn: ผลทายย้อนหลังของโมเดล.'รหัสพื้นที่ (คีย์)'
+	toColumn: พื้นที่.'รหัสพื้นที่ (คีย์)'
+
+relationship AutoDetected_755029d7-66b1-4625-86c5-95093a82733d
+	fromColumn: ค่าแรงที่แท้จริง.'รหัสพื้นที่ (คีย์)'
+	toColumn: พื้นที่.'รหัสพื้นที่ (คีย์)'
+
+relationship AutoDetected_7938a820-4929-4e5a-9e57-490f30217f88
+	fromColumn: ราคาสินค้าเป็นบาท.รหัสสินค้า
+	toColumn: สินค้า.รหัสสินค้า
+

@@ -1,0 +1,114 @@
+table ความแม่นยำของโมเดล
+	lineageTag: 00ed2d57-b9a5-44f6-b369-48976670f575
+
+	column เวลาที่เทรน
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: eb41fcec-3d3a-4d96-a4ec-60e858286d8a
+		summarizeBy: none
+		sourceColumn: run_at
+
+		variation Variation
+			isDefault
+			relationship: dcfddcd7-2246-43a0-b558-a9dc57c18c37
+			defaultHierarchy: LocalDateTable_064821a5-554b-482b-968b-aa379463d59d.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column ชื่อโมเดล
+		dataType: string
+		lineageTag: e62c712e-7fee-4d30-8a83-932baef2e7a2
+		summarizeBy: none
+		sourceColumn: model_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column RMSE
+		dataType: double
+		lineageTag: c74b2274-e447-46c0-88ee-e1b5034d47e3
+		summarizeBy: sum
+		sourceColumn: rmse
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column MAE
+		dataType: double
+		lineageTag: d80bc20e-69a7-4771-b059-4a8cfe208670
+		summarizeBy: sum
+		sourceColumn: mae
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column R²
+		dataType: double
+		lineageTag: 066d56eb-7660-4f13-8705-c048785be105
+		summarizeBy: sum
+		sourceColumn: r2
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'RMSE ของ baseline'
+		dataType: double
+		lineageTag: 2253758f-c6c2-43f5-b6c1-461f6c150437
+		summarizeBy: sum
+		sourceColumn: baseline_rmse
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'ทายทิศทางถูก (%)'
+		dataType: double
+		lineageTag: bf45e7fa-6439-4304-b888-0dea6c3f7bb8
+		summarizeBy: sum
+		sourceColumn: direction_accuracy
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column แถวที่ใช้เทรน
+		dataType: int64
+		formatString: 0
+		lineageTag: 74155489-7c72-4a06-9e03-7d658e8cd8a0
+		summarizeBy: sum
+		sourceColumn: training_rows
+
+		annotation SummarizationSetBy = Automatic
+
+	column แถวที่ใช้ทดสอบ
+		dataType: int64
+		formatString: 0
+		lineageTag: 9b7fe16d-0376-470c-8eb8-fdf0ababa924
+		summarizeBy: sum
+		sourceColumn: holdout_rows
+
+		annotation SummarizationSetBy = Automatic
+
+	column ใช้งานจริง
+		dataType: string
+		lineageTag: d2d154ec-6eb5-47da-a1b0-ca6a9f1f1166
+		summarizeBy: none
+		sourceColumn: deployed
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ความแม่นยำของโมเดล = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    model_metrics_Sheet = Source{[Item="model_metrics",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(model_metrics_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"run_at", type datetime}, {"model_name", type text}, {"rmse", type number}, {"mae", type number}, {"r2", type number}, {"baseline_rmse", type number}, {"direction_accuracy", type number}, {"training_rows", Int64.Type}, {"holdout_rows", Int64.Type}, {"deployed", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

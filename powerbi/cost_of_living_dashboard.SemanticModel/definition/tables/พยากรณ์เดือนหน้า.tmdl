@@ -1,0 +1,136 @@
+table พยากรณ์เดือนหน้า
+	lineageTag: 1c033794-a862-46e5-b018-465eb1d851ac
+
+	measure 'AI ทายเงินเฟ้อเดือนหน้า (%)' = CALCULATE(AVERAGE('พยากรณ์เดือนหน้า'[เปลี่ยนแปลงที่ทาย (%)]), REMOVEFILTERS(), 'พยากรณ์เดือนหน้า'[รหัสพื้นที่ (คีย์)] = "region:TG", 'พยากรณ์เดือนหน้า'[รหัสหมวดสินค้า] = 0)
+		formatString: 0.00
+		lineageTag: b131106e-52fe-4aa6-9231-633502e127e5
+
+	measure 'AI ทาย ทั้งประเทศ (%)' = CALCULATE(AVERAGE('พยากรณ์เดือนหน้า'[เปลี่ยนแปลงที่ทาย (%)]), 'พยากรณ์เดือนหน้า'[รหัสพื้นที่ (คีย์)] = "region:TG")
+		formatString: 0.00
+		lineageTag: a409d3c6-c247-4e78-a356-2154f9526152
+
+	measure 'เดือนที่ AI ทาย' = FORMAT(CALCULATE(MAX('พยากรณ์เดือนหน้า'[เดือนที่ทาย]), REMOVEFILTERS()), "mmm yyyy")
+		lineageTag: 35f1748f-d386-4d3f-bd19-d546589a38e6
+
+	column 'รหัสพื้นที่ (คีย์)'
+		dataType: string
+		lineageTag: 249f4a00-77cc-4cc3-9fde-bec8b0c1fa03
+		summarizeBy: none
+		sourceColumn: area_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสหมวดสินค้า
+		dataType: int64
+		formatString: 0
+		lineageTag: 6361bb1d-3cbc-495b-a608-22406ea9b0d5
+		summarizeBy: none
+		sourceColumn: commodity_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือนฐาน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 926f7917-9dc1-41ac-8ef3-12c1e9563908
+		summarizeBy: none
+		sourceColumn: base_period
+
+		variation Variation
+			isDefault
+			relationship: 7c5ff7ee-def4-441a-a398-4b6b3024040a
+			defaultHierarchy: LocalDateTable_48474b49-a952-4bd8-9fb2-2fe0757d7d5e.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column เดือนที่ทาย
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 782f196d-42d6-4a57-9eac-fce601e56aaf
+		summarizeBy: none
+		sourceColumn: target_period
+
+		variation Variation
+			isDefault
+			relationship: 7356396e-7b1b-493f-ae7d-dc366134c88f
+			defaultHierarchy: LocalDateTable_71fca037-6d58-48e9-b464-b9a08696689b.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ดัชนีเดือนฐาน
+		dataType: double
+		lineageTag: 5ee94f1d-f123-4297-936b-e881291cfe87
+		summarizeBy: sum
+		sourceColumn: base_index
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ดัชนีที่ทาย
+		dataType: double
+		lineageTag: 8989c6c6-4b59-475b-a42b-43b4273b9bd0
+		summarizeBy: sum
+		sourceColumn: predicted_index
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'เปลี่ยนแปลงที่ทาย (%)'
+		dataType: double
+		lineageTag: 69d1edd0-2499-4a37-af87-2a85c60fb299
+		summarizeBy: sum
+		sourceColumn: predicted_change_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ทิศทาง
+		dataType: string
+		lineageTag: 02c04869-c03c-4a23-93b4-f45a174823c5
+		summarizeBy: none
+		sourceColumn: direction
+
+		annotation SummarizationSetBy = Automatic
+
+	column ชื่อโมเดล
+		dataType: string
+		lineageTag: 34dd6f4c-a740-46be-a32c-3cb75a6ed0f7
+		summarizeBy: none
+		sourceColumn: model_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column เวลาที่ทาย
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 85594c15-dc5e-468a-91de-81b0c0cf16cc
+		summarizeBy: none
+		sourceColumn: predicted_at
+
+		variation Variation
+			isDefault
+			relationship: ddd6dd62-eae5-406b-a8a0-a366e55b3926
+			defaultHierarchy: LocalDateTable_351948cb-9841-409f-8687-ed02e0f82811.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	partition พยากรณ์เดือนหน้า = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_forecast_Sheet = Source{[Item="fact_forecast",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_forecast_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"area_key", type text}, {"commodity_code", Int64.Type}, {"base_period", type date}, {"target_period", type date}, {"base_index", type number}, {"predicted_index", type number}, {"predicted_change_pct", type number}, {"direction", type text}, {"model_name", type text}, {"predicted_at", type datetime}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

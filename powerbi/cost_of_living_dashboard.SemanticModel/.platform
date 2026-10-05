@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "cost_of_living_dashboard"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c3d64c45-39f8-4ef5-a572-140c2a7be95e"
+  }
+}

@@ -1,0 +1,73 @@
+table สินค้า
+	lineageTag: 913ce31a-a3d1-484c-8401-80e758c48157
+
+	column รหัสสินค้า
+		dataType: string
+		lineageTag: 545099c9-80ec-4862-8989-61199ae3d7ad
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column ชื่อสินค้า
+		dataType: string
+		lineageTag: ec13e953-2dcd-430c-bc0f-1da5c351fe25
+		summarizeBy: none
+		sourceColumn: label
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ชื่อสินค้า (ต้นทาง)'
+		dataType: string
+		lineageTag: 45580149-bd43-47ae-82d4-4d810653fd8f
+		summarizeBy: none
+		sourceColumn: product_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column หน่วย
+		dataType: string
+		lineageTag: b53368c6-5e56-489a-a822-0b7582f2b774
+		summarizeBy: none
+		sourceColumn: unit
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสหมวดดัชนี
+		dataType: int64
+		formatString: 0
+		lineageTag: 87ff431f-9017-47ad-a052-7e0e531fe3c7
+		summarizeBy: sum
+		sourceColumn: cpi_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column กลุ่มสินค้า
+		dataType: string
+		lineageTag: 49fb4235-824a-4c58-91b4-bb3a8a6bf753
+		summarizeBy: none
+		sourceColumn: product_group
+
+		annotation SummarizationSetBy = Automatic
+
+	column แหล่งข้อมูล
+		dataType: string
+		lineageTag: b365cdf7-bccd-42aa-bd90-05bc44ecb343
+		summarizeBy: none
+		sourceColumn: source
+
+		annotation SummarizationSetBy = Automatic
+
+	partition สินค้า = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    dim_product_Sheet = Source{[Item="dim_product",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(dim_product_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"product_id", type text}, {"label", type text}, {"product_name", type text}, {"unit", type text}, {"cpi_code", Int64.Type}, {"product_group", type text}, {"source", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

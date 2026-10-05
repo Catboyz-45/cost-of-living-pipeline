@@ -1,0 +1,104 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "1148a722fb2746aa8f28",
+  "position": {
+    "x": 20,
+    "y": 20,
+    "z": 0,
+    "height": 680,
+    "width": 610,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "พื้นที่"
+                    }
+                  },
+                  "Property": "ชื่อพื้นที่"
+                }
+              },
+              "queryRef": "พื้นที่.ชื่อพื้นที่",
+              "nativeQueryRef": "ชื่อพื้นที่",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ดัชนีราคา จังหวัด 36 เดือน"
+                    }
+                  },
+                  "Property": "เงินเฟ้ออาหารจังหวัด (%)"
+                }
+              },
+              "queryRef": "ดัชนีราคา จังหวัด 36 เดือน.เงินเฟ้ออาหารจังหวัด (%)",
+              "nativeQueryRef": "เงินเฟ้ออาหารจังหวัด (%)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "ดัชนีราคา จังหวัด 36 เดือน"
+                  }
+                },
+                "Property": "เงินเฟ้ออาหารจังหวัด (%)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ราคาอาหารเทียบปีก่อน รายจังหวัด (%)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

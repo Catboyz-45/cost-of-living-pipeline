@@ -1,0 +1,8 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "8b2aa89d06664455a495",
+  "displayName": "จังหวัดไหนแพงเร็ว",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280
+}

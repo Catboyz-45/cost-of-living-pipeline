@@ -26,6 +26,17 @@ from pydantic import BaseModel, ConfigDict, Field
 from col_08_features import FEATURE_COLUMNS, build_features, complete_rows, describe_artifact
 
 MODEL_PATH = Path("/models/cost_of_living/current_model.pkl")
+# ไฟล์ที่ task export_powerbi ของ Airflow สร้างไว้ (mount แบบอ่านอย่างเดียว)
+EXPORT_DIR = Path(os.environ.get("EXPORT_DIR", "/exports"))
+# ให้ดาวน์โหลดได้เฉพาะไฟล์ในรายการนี้ ชื่อไฟล์จาก URL ไม่ถูกนำไปต่อ path ตรง ๆ
+DOWNLOADS = {
+    "excel": {
+        "file": "cost_of_living_powerbi.xlsx",
+        "label": "Excel ข้อมูลเต็ม",
+        "description": "ทุกตาราง ตารางละ sheet · ดัชนีหมวดย่อยครบ",
+    },
+}
+XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 POWERBI_EMBED_URL = os.environ.get("POWERBI_EMBED_URL", "").strip()
 # รูปแบบ area_key เช่น "province:50" หรือ "region:TG" ป้องกันค่าแปลกปลอมตั้งแต่ต้นทาง
@@ -824,6 +835,39 @@ def powerbi() -> dict[str, Any]:
     """ลิงก์ฝังรายงาน Power BI จาก env POWERBI_EMBED_URL (รับเฉพาะลิงก์ของ app.powerbi.com)."""
     url = POWERBI_EMBED_URL if POWERBI_EMBED_URL.startswith("https://app.powerbi.com/") else None
     return {"embed_url": url}
+
+
+@app.get("/api/downloads")
+def downloads() -> dict[str, Any]:
+    """รายการไฟล์ Excel ที่ดาวน์โหลดได้ พร้อมขนาดและเวลาที่สร้าง (ไฟล์ที่ยังไม่มีจะไม่แสดง)."""
+    items = []
+    for key, info in DOWNLOADS.items():
+        path = EXPORT_DIR / info["file"]
+        if not path.is_file():
+            continue
+        stat = path.stat()
+        items.append(
+            {
+                "key": key,
+                "label": info["label"],
+                "description": info["description"],
+                "file": info["file"],
+                "bytes": stat.st_size,
+                "generated_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+                "url": f"/api/download/{key}",
+            }
+        )
+    return {"files": items}
+
+
+@app.get("/api/download/{key}", include_in_schema=False)
+def download(key: str) -> FileResponse:
+    """ส่งไฟล์ Excel ตาม key ใน DOWNLOADS เท่านั้น."""
+    info = DOWNLOADS.get(key)
+    path = EXPORT_DIR / info["file"] if info else None
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="File is not available yet")
+    return FileResponse(path, media_type=XLSX_MEDIA_TYPE, filename=info["file"])
 
 
 # หน้า dashboard เป็นไฟล์ static (HTML/CSS/JS) ในโฟลเดอร์ static/

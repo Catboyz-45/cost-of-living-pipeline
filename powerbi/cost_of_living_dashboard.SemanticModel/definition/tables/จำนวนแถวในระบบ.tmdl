@@ -1,0 +1,37 @@
+table จำนวนแถวในระบบ
+	lineageTag: 50e75d31-1fc1-4af9-bc56-37081d670456
+
+	measure แถวข้อมูลทั้งหมด = SUM('จำนวนแถวในระบบ'[จำนวนแถว])
+		formatString: #,0
+		lineageTag: 6f8f9415-3a2f-48ad-b0df-9ce62b837347
+
+	column ตาราง
+		dataType: string
+		lineageTag: 3cd56406-525f-46b9-8452-92cd4ec30f74
+		summarizeBy: none
+		sourceColumn: table_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column จำนวนแถว
+		dataType: int64
+		formatString: 0
+		lineageTag: 204680de-9714-4987-90cf-c94804656892
+		summarizeBy: sum
+		sourceColumn: row_count
+
+		annotation SummarizationSetBy = Automatic
+
+	partition จำนวนแถวในระบบ = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    data_volume_Sheet = Source{[Item="data_volume",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(data_volume_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"table_name", type text}, {"row_count", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

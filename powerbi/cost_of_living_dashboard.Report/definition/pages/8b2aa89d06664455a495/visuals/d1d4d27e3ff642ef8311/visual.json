@@ -1,0 +1,104 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "d1d4d27e3ff642ef8311",
+  "position": {
+    "x": 650,
+    "y": 20,
+    "z": 1,
+    "height": 680,
+    "width": 610,
+    "tabOrder": 1
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "พื้นที่"
+                    }
+                  },
+                  "Property": "ชื่อพื้นที่"
+                }
+              },
+              "queryRef": "พื้นที่.ชื่อพื้นที่",
+              "nativeQueryRef": "ชื่อพื้นที่",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ดัชนีราคา จังหวัด 36 เดือน"
+                    }
+                  },
+                  "Property": "เงินเฟ้อจังหวัด (%)"
+                }
+              },
+              "queryRef": "ดัชนีราคา จังหวัด 36 เดือน.เงินเฟ้อจังหวัด (%)",
+              "nativeQueryRef": "เงินเฟ้อจังหวัด (%)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "ดัชนีราคา จังหวัด 36 เดือน"
+                  }
+                },
+                "Property": "เงินเฟ้อจังหวัด (%)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'เงินเฟ้อทั่วไปเทียบปีก่อน รายจังหวัด (%)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

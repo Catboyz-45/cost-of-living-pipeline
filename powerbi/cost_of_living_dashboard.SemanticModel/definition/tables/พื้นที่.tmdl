@@ -1,0 +1,75 @@
+table พื้นที่
+	lineageTag: 340d2a92-f00d-4c52-b459-806f08c31762
+
+	column 'รหัสพื้นที่ (คีย์)'
+		dataType: string
+		lineageTag: 0d7ffca4-9763-4fe3-b275-f2aa301ffe93
+		summarizeBy: none
+		sourceColumn: area_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column ประเภทพื้นที่
+		dataType: string
+		lineageTag: 94c7a3be-8467-41be-9030-1c3f62a1d504
+		summarizeBy: none
+		sourceColumn: area_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสพื้นที่
+		dataType: string
+		lineageTag: 26b30558-ec64-4a86-bbc0-0d9b3544ee2c
+		summarizeBy: none
+		sourceColumn: area_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column ชื่อพื้นที่
+		dataType: string
+		lineageTag: 28204de2-140a-48b9-9173-a2bd036037ce
+		summarizeBy: none
+		sourceColumn: area_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสภาค
+		dataType: string
+		lineageTag: 7ef55c1e-1f54-4413-926f-2d1ff000e1e5
+		summarizeBy: none
+		sourceColumn: region_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column ภาค
+		dataType: string
+		lineageTag: 27ab0653-d512-4bfd-a8a2-cab6d3e29adf
+		summarizeBy: none
+		sourceColumn: region_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column ประเทศ
+		dataType: string
+		lineageTag: 5178e4a6-f740-4b7a-8ee8-ce5b62a249b4
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	partition พื้นที่ = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    dim_area_Sheet = Source{[Item="dim_area",Kind="Sheet"]}[Data],
+				    #"Changed Type" = Table.TransformColumnTypes(dim_area_Sheet,{{"Column1", type text}, {"Column2", type text}, {"Column3", type text}, {"Column4", type text}, {"Column5", type text}, {"Column6", type text}, {"Column7", type text}}),
+				    #"Promoted Headers" = Table.PromoteHeaders(#"Changed Type", [PromoteAllScalars=true]),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Promoted Headers",{{"area_key", type text}, {"area_type", type text}, {"area_code", type text}, {"area_name", type text}, {"region_code", type text}, {"region_name", type text}, {"country", type text}})
+				in
+				    #"Changed Type1"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

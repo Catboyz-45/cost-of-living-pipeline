@@ -1,0 +1,114 @@
+table ราคาสินค้าเป็นบาท
+	lineageTag: 23486997-079d-42fe-ac75-ea9b68780bec
+
+	measure 'ราคาล่าสุด (บาท)' = VAR d = CALCULATE(MAX('ราคาสินค้าเป็นบาท'[เดือน]), REMOVEFILTERS('ราคาสินค้าเป็นบาท'[เดือน])) RETURN IF(SELECTEDVALUE('สินค้า'[รหัสสินค้า]) IN {"P11028","P11003","P11012","P12014","P13001","R13001","P16011","F52001","F52002"}, CALCULATE(AVERAGE('ราคาสินค้าเป็นบาท'[ราคาประมาณ (บาท)]), 'ราคาสินค้าเป็นบาท'[เดือน] = d))
+		formatString: 0.00
+		lineageTag: f9b54757-3e71-43d0-9956-41d9a842d039
+
+	measure 'ราคา 10 ปีก่อน (บาท)' = VAR d = CALCULATE(MAX('ราคาสินค้าเป็นบาท'[เดือน]), REMOVEFILTERS('ราคาสินค้าเป็นบาท'[เดือน])) RETURN IF(SELECTEDVALUE('สินค้า'[รหัสสินค้า]) IN {"P11028","P11003","P11012","P12014","P13001","R13001","P16011","F52001","F52002"}, CALCULATE(AVERAGE('ราคาสินค้าเป็นบาท'[ราคาประมาณ (บาท)]), 'ราคาสินค้าเป็นบาท'[เดือน] = EDATE(d, -120)))
+		formatString: 0.00
+		lineageTag: 38bb7e46-79a5-4d81-a6cf-5d8010d05b35
+
+	measure 'ราคาเปลี่ยนใน 10 ปี (%)' = VAR n = [ราคาล่าสุด (บาท)] VAR o = [ราคา 10 ปีก่อน (บาท)] RETURN IF(NOT ISBLANK(o), DIVIDE(n - o, o) * 100)
+		formatString: 0.0
+		lineageTag: 6b06d6fa-2f37-4da1-8adc-973092946a97
+
+	column รหัสสินค้า
+		dataType: string
+		lineageTag: 17a0b7d4-7030-46cc-8ef6-4fcc0a656ab4
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column ชื่อสินค้า
+		dataType: string
+		lineageTag: 6445c812-e102-42a7-9dba-7a166907e62c
+		summarizeBy: none
+		sourceColumn: label
+
+		annotation SummarizationSetBy = Automatic
+
+	column หน่วย
+		dataType: string
+		lineageTag: 837bd81e-b2db-4f4a-895e-ca50acd780e0
+		summarizeBy: none
+		sourceColumn: unit
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 16d72a97-ab35-447d-a7d6-eaa62d29e09f
+		summarizeBy: none
+		sourceColumn: period_date
+
+		variation Variation
+			isDefault
+			relationship: b14097ec-e2b1-403b-918f-c3ad83b889a4
+			defaultHierarchy: LocalDateTable_b77b24ca-fd1b-4ef5-bac4-e304772baa42.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'ราคาจริง (บาท)'
+		dataType: string
+		lineageTag: dc40482a-c007-4c44-acab-f8f20b75a9d2
+		summarizeBy: none
+		sourceColumn: actual_price
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ราคาประมาณ (บาท)'
+		dataType: double
+		lineageTag: 7c8d0ba8-ca9a-4985-be40-c2bccdd8e753
+		summarizeBy: sum
+		sourceColumn: estimated_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column เดือนราคาอ้างอิง
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 5f4f6885-e363-4348-a0b1-9187f445340e
+		summarizeBy: none
+		sourceColumn: anchor_period
+
+		variation Variation
+			isDefault
+			relationship: 2e32987f-cfce-432e-9af9-a02a462bddb5
+			defaultHierarchy: LocalDateTable_45c09b00-c327-4d1f-85f2-e747a30c2884.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'ราคาอ้างอิง (บาท)'
+		dataType: double
+		lineageTag: ebfa0082-5ef8-4c3d-8008-5f8d908e4e5f
+		summarizeBy: sum
+		sourceColumn: anchor_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition ราคาสินค้าเป็นบาท = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_price_estimates_Sheet = Source{[Item="fact_price_estimates",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_price_estimates_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"product_id", type text}, {"label", type text}, {"unit", type text}, {"period_date", type date}, {"actual_price", type any}, {"estimated_price", type number}, {"anchor_period", type date}, {"anchor_price", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+
