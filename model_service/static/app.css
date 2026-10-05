@@ -64,10 +64,8 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); flex: none; }
 .brand:hover { color: var(--ink); }
-.brand-mark {
-  width: 40px; height: 40px; border-radius: 12px; background: var(--ink); color: #f7c08a;
-  display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 20px;
-}
+/* โลโก้เป็นรูป PNG มุมโค้งโปร่งใสอยู่แล้ว */
+.brand-mark { width: 40px; height: 40px; flex: none; display: block; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-text strong { font-family: var(--display); font-size: 18px; font-weight: 700; }
 .brand-text small { font-size: 12px; color: var(--muted); }
@@ -639,7 +637,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 /* ---------- มือถือ: เมนูย้ายไปล่างจอแบบแอป ---------- */
 @media (max-width: 760px) {
   .topbar { height: 60px; gap: 12px; backdrop-filter: none; background: var(--page); }
-  .brand-mark { width: 32px; height: 32px; border-radius: 10px; font-size: 17px; }
+  .brand-mark { width: 32px; height: 32px; }
   .brand-text strong { font-size: 17px; }
   .nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; gap: 0; padding: 6px 8px calc(10px + env(safe-area-inset-bottom));
