@@ -1263,6 +1263,52 @@
     return box;
   }
 
+  // ตอนกดใส่ตะกร้า: รูปสินค้าทั้งรูปหดเล็กลงแล้วพุ่งเข้าตะกร้าที่มองเห็นอยู่ ตะกร้ายุบรับ
+  // ปลายทาง: แถบ "ดูตะกร้า" (มือถือ) > หัวกล่องตะกร้าถ้าอยู่ในจอ > ไอคอนตะกร้าบนเมนู
+  function cartTarget() {
+    const visible = (node) => {
+      if (!node) return false;
+      const r = node.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
+    };
+    const bar = $("cart-bar");
+    if (visible(bar)) return bar;
+    const head = document.querySelector("#cart .cart-head h2");
+    if (visible(head)) return head;
+    return document.querySelector('.nav a[data-page="basket"]');
+  }
+  function flyToCart(thumb) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const target = cartTarget();
+    if (!target) return;
+    const from = thumb.getBoundingClientRect();
+    const to = target.getBoundingClientRect();
+    const ghost = thumb.cloneNode(true);
+    ghost.querySelectorAll(".shop-tag, .shop-ai").forEach((node) => node.remove());
+    ghost.classList.add("fly-ghost");
+    Object.assign(ghost.style, { position: "fixed", aspectRatio: "auto", left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` });
+    document.body.appendChild(ghost);
+    // หดเหลือวงกลมราว 28px ที่กึ่งกลางปลายทาง (ฝั่งซ้ายของปุ่ม/หัวตะกร้า ตรงไอคอน)
+    const size = 28;
+    const endX = to.left + Math.min(24, to.width / 2) - (from.left + from.width / 2);
+    const endY = to.top + to.height / 2 - (from.top + from.height / 2);
+    const scale = size / Math.max(from.width, from.height);
+    const flight = ghost.animate([
+      { transform: "translate(0, 0) scale(1)", borderRadius: "16px", opacity: 1 },
+      { transform: `translate(${endX}px, ${endY}px) scale(${scale})`, borderRadius: "50%", opacity: 0.7 },
+    ], { duration: 550, easing: "cubic-bezier(.6, 0, .4, 1)" });
+    // สำรองไว้: ถ้าแท็บถูกซ่อนกลางทาง onfinish อาจไม่ถูกเรียก รูปจะไม่ค้างบนจอ
+    setTimeout(() => ghost.remove(), 1000);
+    flight.onfinish = () => {
+      ghost.remove();
+      target.animate([
+        { transform: "translateY(0) scale(1)" },
+        { transform: "translateY(3px) scale(.94)" },
+        { transform: "translateY(0) scale(1)" },
+      ], { duration: 280, easing: "ease-out" });
+    };
+  }
+
   // การ์ดสินค้าแบบร้านค้าออนไลน์: รูป (ไอคอน), ชื่อ, ราคาวันนี้, ราคาปีก่อนขีดฆ่า + ป้าย %, ปุ่มใส่ตะกร้า
   function shopCard(p) {
     const look = productLook(p.label);
@@ -1300,6 +1346,7 @@
       const add = withIcon(el("button", "shop-add", "ใส่ตะกร้า"), "cart");
       add.type = "button";
       add.addEventListener("click", () => {
+        flyToCart(thumb);
         addToBasket(p);
         shop.cards.get(p.product_id)?.querySelector(".stepper button:last-child")?.focus();
       });

@@ -439,6 +439,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 }
 .shop-card:hover { transform: translateY(-2px); border-color: var(--ink); }
 .shop-card.in-cart { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+/* รูปสินค้าที่ลอยเข้าตะกร้า (JS ตั้งตำแหน่งและขนาดเริ่มต้น) */
+.fly-ghost {
+  position: fixed; z-index: 1000; margin: 0; pointer-events: none; overflow: hidden;
+  transform-origin: center; will-change: transform; border-radius: 16px;
+}
 .shop-thumb { position: relative; aspect-ratio: 4 / 3; background: var(--surface-2); }
 .shop-thumb::before {
   content: ""; position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; background: var(--ink-2);
