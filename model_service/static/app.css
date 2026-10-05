@@ -591,6 +591,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 .table th { position: sticky; top: 0; background: var(--surface); text-align: left; color: var(--ink-2); font-weight: 500; font-size: 13px; padding: 10px 8px; border-bottom: 1px solid var(--border); }
 .table td { padding: 11px 8px; border-bottom: 1px solid var(--grid); }
 .table td.num, .table th.num { text-align: right; }
+/* หัวคอลัมน์ที่กดเรียงได้ */
+.th-sort {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 6px; margin: -6px -6px;
+  border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.th-sort:hover { background: var(--surface-2); color: var(--ink); }
+.th-sort.active { color: var(--ink); font-weight: 600; }
+.th-arrow { font-size: 11px; color: var(--muted); }
+.th-sort.active .th-arrow { color: var(--ai); }
 .table td.num { font-family: var(--mono); font-size: 13px; }
 .table tr:hover td { background: var(--page); }
 .table tr.clickable { cursor: pointer; }

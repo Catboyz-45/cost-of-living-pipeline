@@ -237,7 +237,23 @@
   function tableRows(table, headers, rows, onClick) {
     table.replaceChildren();
     const head = el("tr");
-    for (const header of headers) { const th = el("th", header.num ? "num" : "", header.label); head.appendChild(th); }
+    for (const header of headers) {
+      const th = el("th", header.num ? "num" : "");
+      // หัวคอลัมน์ที่เรียงได้: header.sort = { dir: "desc" | "asc" | null, onClick }
+      if (header.sort) {
+        const dir = header.sort.dir;
+        th.setAttribute("aria-sort", dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none");
+        const button = el("button", `th-sort${dir ? " active" : ""}`);
+        button.type = "button";
+        button.title = dir === "desc" ? "เรียงจากน้อยไปมาก" : "เรียงจากมากไปน้อย";
+        button.append(document.createTextNode(header.label), el("span", "th-arrow", dir === "asc" ? "▲" : dir === "desc" ? "▼" : "↕"));
+        button.addEventListener("click", header.sort.onClick);
+        th.appendChild(button);
+      } else {
+        th.textContent = header.label;
+      }
+      head.appendChild(th);
+    }
     const thead = el("thead"); thead.appendChild(head); table.appendChild(thead);
     const tbody = el("tbody");
     for (const row of rows) {
@@ -1053,11 +1069,37 @@
   // ตารางค่าแรงแสดง 10 จังหวัดแรกก่อน กดปุ่มเพื่อดูครบทุกจังหวัด
   const WAGE_ROWS = 10;
   let wageShowAll = false;
+  // เรียงตามคอลัมน์ที่กด: กดครั้งแรกมากไปน้อย กดซ้ำสลับเป็นน้อยไปมาก (ยังไม่กด = ลำดับจาก API)
+  let wageSort = { key: null, dir: null };
   function drawWageTable(provinces) {
     const select = $("wage-province");
+    const sortHeader = (label, key) => ({
+      label, num: true,
+      sort: {
+        dir: wageSort.key === key ? wageSort.dir : null,
+        onClick: () => {
+          wageSort = { key, dir: wageSort.key === key && wageSort.dir === "desc" ? "asc" : "desc" };
+          drawWageTable(provinces);
+        },
+      },
+    });
+    const sorted = [...provinces];
+    if (wageSort.key) {
+      const sign = wageSort.dir === "asc" ? 1 : -1;
+      // จังหวัดที่ไม่มีค่าไว้ท้ายตารางเสมอ ไม่ว่าเรียงทางไหน
+      sorted.sort((a, b) => {
+        const x = a[wageSort.key], y = b[wageSort.key];
+        if (x === null || x === undefined) return 1;
+        if (y === null || y === undefined) return -1;
+        return (x - y) * sign;
+      });
+    }
     tableRows($("wage-table"), [
-      { label: "จังหวัด" }, { label: "ค่าแรงวันละ", num: true }, { label: "หักของแพงแล้วเหลือ (เงินปี 2566)", num: true }, { label: "ซื้อของได้มากขึ้น/น้อยลง", num: true },
-    ], (wageShowAll ? provinces : provinces.slice(0, WAGE_ROWS)).map((p) => ({ code: p.province_code, cells: [p.province_name, `${num(p.nominal_wage, 0)} ฿`, `${num(p.real_wage, 0)} ฿`, deltaNode(p.real_change_pct, "%", false)] })),
+      { label: "จังหวัด" },
+      sortHeader("ค่าแรงวันละ", "nominal_wage"),
+      sortHeader("หักของแพงแล้วเหลือ (เงินปี 2566)", "real_wage"),
+      sortHeader("ซื้อของได้มากขึ้น/น้อยลง", "real_change_pct"),
+    ], (wageShowAll ? sorted : sorted.slice(0, WAGE_ROWS)).map((p) => ({ code: p.province_code, cells: [p.province_name, `${num(p.nominal_wage, 0)} ฿`, `${num(p.real_wage, 0)} ฿`, deltaNode(p.real_change_pct, "%", false)] })),
     (row) => { select.value = row.code; drawWage(); window.scrollTo({ top: 0, behavior: "smooth" }); });
     const more = $("wage-more");
     more.hidden = wageShowAll || provinces.length <= WAGE_ROWS;
