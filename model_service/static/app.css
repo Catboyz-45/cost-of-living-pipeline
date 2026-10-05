@@ -50,7 +50,8 @@ body {
 a { color: var(--ink); }
 a:hover { color: var(--up); }
 code { font-family: var(--mono); font-size: .85em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
-h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
+/* ภาษาไทยมีสระและวรรณยุกต์ซ้อนด้านบน: ห้ามบีบระยะตัวอักษร ไม่งั้นไปชนหางของ ป ฝ ฟ */
+h1, h2, h3 { font-family: var(--display); letter-spacing: 0; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .app > *, .hero-grid > *, .map-layout > *, .grid-2 > *, .tiles > *, .fc-grid > *, .dish-layout > *, .bt-layout > *, .card { min-width: 0; }
@@ -103,7 +104,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 }
 .page-ai .eyebrow, .page-ai .kicker { color: var(--ai); }
 .page-head { display: flex; flex-direction: column; gap: 12px; max-width: 920px; }
-.page-head h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); font-weight: 700; line-height: 1.15; }
+.page-head h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); font-weight: 700; line-height: 1.35; }
 .page-head p { margin: 0; font-size: 18px; line-height: 1.6; color: var(--ink-2); }
 .takeaway b, .lede b { color: var(--ink); }
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -133,7 +134,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 /* ---------- หน้าแรก: พาดหัว + การ์ด AI ---------- */
 .hero-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px; align-items: stretch; }
 .headline { display: flex; flex-direction: column; gap: 24px; padding: 8px 0; }
-.headline h1 { margin: 0; font-size: clamp(36px, 4.4vw, 60px); font-weight: 700; line-height: 1.12; }
+.headline h1 { margin: 0; font-size: clamp(36px, 4.4vw, 60px); font-weight: 700; line-height: 1.35; }
 .headline h1 .line { white-space: nowrap; }
 .headline h1 .num { font-family: var(--mono); font-weight: 600; letter-spacing: -.02em; }
 .headline h1 .num.up { color: var(--up); }
@@ -657,7 +658,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .main { padding: 24px 16px 40px; }
   .page { gap: 40px; }
   .headline { gap: 16px; }
-  .headline h1 { font-size: min(7.4vw, 32px); line-height: 1.25; }
+  .headline h1 { font-size: min(7.4vw, 32px); line-height: 1.4; }
   .lede, .page-head p { font-size: 15px; }
   .page-head h1 { font-size: 30px; }
   .section-head h2, .cat-text h2 { font-size: 24px; }
