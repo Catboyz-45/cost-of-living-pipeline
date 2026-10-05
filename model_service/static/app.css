@@ -151,12 +151,12 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: 0; }
 /* บอทอยู่หลังการ์ด (z-index ต่ำกว่า) เลื่อนขึ้นจนเห็นแค่เสาอากาศกับตา แล้วขยับขึ้นลงเบา ๆ */
 .ai-stage { position: relative; display: flex; flex-direction: column; }
 .ai-stage > .ai-card { position: relative; z-index: 1; flex: 1; }
-.ai-bot { position: absolute; z-index: 0; right: 40px; top: -42px; transform: translateY(70px); }
+.ai-bot { position: absolute; z-index: 0; right: 40px; top: -63px; width: 96px; height: 144px; transform: translateY(105px); }
 .ai-stage.peek .ai-bot { animation: bot-peek 1.2s ease-out .3s both, bot-bob 2.4s ease-in-out 1.6s infinite; }
 .ai-bot-eyes { transform-box: fill-box; transform-origin: center; }
 .ai-stage.peek .ai-bot-eyes { animation: bot-blink 3.2s 1.8s infinite; }
-@keyframes bot-peek { 0% { transform: translateY(70px); } 40% { transform: translateY(0); } 55% { transform: translateY(8px); } 100% { transform: translateY(0); } }
-@keyframes bot-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes bot-peek { 0% { transform: translateY(105px); } 40% { transform: translateY(0); } 55% { transform: translateY(12px); } 100% { transform: translateY(0); } }
+@keyframes bot-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @keyframes bot-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
 @media (prefers-reduced-motion: reduce) {
   .ai-stage.peek .ai-bot, .ai-stage.peek .ai-bot-eyes { animation: none; }
@@ -637,7 +637,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 }
 @media (max-width: 1100px) {
   .hero-grid, .map-layout, .grid-2, .fc-grid, .dish-layout, .bt-layout, .cat-card { grid-template-columns: minmax(0, 1fr); }
-  .ai-stage { margin-top: 28px; }  /* เผื่อที่ให้หัวบอทตอนการ์ดอยู่ใต้กราฟ */
+  .ai-stage { margin-top: 48px; }  /* เผื่อที่ให้หัวบอทตอนการ์ดอยู่ใต้กราฟ */
   .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-strip .tile:nth-child(3) { border-left: 0; }
   .stat-strip .tile:nth-child(n+3) { border-top: 1px solid var(--border); }
