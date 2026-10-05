@@ -815,8 +815,11 @@
   // ---------- แถบ AI บนหน้าแรก ----------
   function renderAiBanner(fc, products) {
     const card = $("ai-banner");
+    const stage = $("ai-stage");
     card.replaceChildren();
-    if (!fc) { card.hidden = true; return; }
+    if (!fc) { stage.hidden = true; return; }
+    // บอทโผล่หลังมีตัวเลขในการ์ดแล้ว ไม่โผล่ค้างอยู่บนการ์ดว่าง
+    stage.classList.add("peek");
     const value = el("div", "ai-value", `ของโดยรวมจะ${fc.predicted_change_pct >= 0 ? "แพงขึ้นอีก" : "ถูกลง"} `);
     const aiPct = el("b");
     value.appendChild(aiPct);
