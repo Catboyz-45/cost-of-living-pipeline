@@ -1519,7 +1519,6 @@
     tableRows($("load-table"), [{ label: "แหล่งข้อมูล" }, { label: "แถว", num: true }, { label: "เวลา" }],
       pipelineInfo.loads.map((l) => ({ cells: [SOURCE_NAMES[l.source] || l.source, compact(l.rows_loaded), new Date(l.loaded_at).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" })] })));
     renderPowerBi();
-    renderDownloads();
     await renderModelQuality();
     bars($("farm-corr"), pipelineInfo.farm_correlations.slice(0, 10).map((c) => ({
       label: `${c.farm_item.replace(/ราคา|ที่เกษตรกรขายได้|รายเดือน|เฉลี่ย/g, "").trim()} · lag ${c.lag_months}`,
@@ -1551,40 +1550,6 @@
     const open = $("powerbi-open");
     open.href = url;
     open.hidden = false;
-  }
-
-  // ปุ่มดาวน์โหลด Excel แสดงขนาดและเวลาที่สร้าง เพราะไฟล์เต็มอาจใหญ่หลายสิบ MB
-  async function renderDownloads() {
-    const box = $("downloads");
-    if (box.dataset.done) return;
-    box.dataset.done = "1";
-    const { files } = await api("/api/downloads");
-    if (!files.length) {
-      const note = document.createElement("p");
-      note.className = "powerbi-empty";
-      note.textContent = "ยังไม่มีไฟล์ · รัน DAG ใน Airflow ให้ถึง task export_powerbi ก่อน แล้วไฟล์จะขึ้นที่นี่";
-      box.replaceChildren(note);
-      return;
-    }
-    box.replaceChildren(...files.map((f) => {
-      const row = document.createElement("div");
-      row.className = "download-row";
-      const text = document.createElement("div");
-      const title = document.createElement("b");
-      title.textContent = f.label;
-      const sub = document.createElement("p");
-      sub.className = "muted";
-      const when = new Date(f.generated_at).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
-      sub.textContent = `${f.description} · ${num(f.bytes / 1e6, 1)} MB · สร้างเมื่อ ${when}`;
-      text.append(title, sub);
-      const link = document.createElement("a");
-      link.className = "link-btn";
-      link.href = f.url;
-      link.download = f.file;
-      link.textContent = "ดาวน์โหลด .xlsx";
-      row.append(text, link);
-      return row;
-    }));
   }
 
   // ---------- router ----------
