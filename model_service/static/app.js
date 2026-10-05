@@ -1578,6 +1578,16 @@
     document.querySelectorAll("#range-chips button").forEach((b) => b.classList.toggle("active", b === button));
     renderLongrun();
   });
+  // ปุ่มดาวน์โหลดบนแถบเมนู: เช็กก่อนว่ามีไฟล์ ไม่งั้นกดแล้วจะเจอหน้า 404
+  $("nav-download").addEventListener("click", async (event) => {
+    event.preventDefault();
+    try {
+      const { files } = await api("/api/downloads");
+      const file = files.find((f) => f.key === "excel");
+      if (file) { window.location.href = file.url; return; }
+    } catch (error) { console.error(error); }
+    alert("ยังไม่มีไฟล์ Excel · ต้องรัน DAG ใน Airflow ให้ถึง task export_powerbi ก่อน");
+  });
   hydrate();
   prepareReveal();
   saveBasket();

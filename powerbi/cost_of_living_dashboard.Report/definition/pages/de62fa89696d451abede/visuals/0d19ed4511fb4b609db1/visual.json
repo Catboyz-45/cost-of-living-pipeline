@@ -1,0 +1,95 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "0d19ed4511fb4b609db1",
+  "position": {
+    "x": 650,
+    "y": 20,
+    "z": 2,
+    "height": 120,
+    "width": 295,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ค่าแรงที่แท้จริง"
+                    }
+                  },
+                  "Property": "ไข่ไก่ที่ซื้อได้ด้วยค่าแรง 1 วัน (ฟอง)"
+                }
+              },
+              "queryRef": "ค่าแรงที่แท้จริง.ไข่ไก่ที่ซื้อได้ด้วยค่าแรง 1 วัน (ฟอง)",
+              "nativeQueryRef": "ไข่ไก่ที่ซื้อได้ด้วยค่าแรง 1 วัน (ฟอง)"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ค่าแรง 1 วันซื้อไข่ไก่ได้ (ฟอง)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "labels": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "28D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "categoryLabels": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

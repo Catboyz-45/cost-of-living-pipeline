@@ -1,0 +1,103 @@
+table ราคาขายปลีกรายเดือน
+	lineageTag: 4cb941c8-7948-4c06-bed5-451df4c82bcb
+
+	column รหัสสินค้า
+		dataType: string
+		lineageTag: 51322544-f5cb-441e-bdbb-208f570f31b4
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column ชื่อสินค้า
+		dataType: string
+		lineageTag: 96609e85-dfe9-461c-9788-20ae13744842
+		summarizeBy: none
+		sourceColumn: label
+
+		annotation SummarizationSetBy = Automatic
+
+	column หน่วย
+		dataType: string
+		lineageTag: 5204fc56-3909-4859-b169-d3ee4968e24e
+		summarizeBy: none
+		sourceColumn: unit
+
+		annotation SummarizationSetBy = Automatic
+
+	column กลุ่มสินค้า
+		dataType: string
+		lineageTag: 2a9d4d78-d6de-4735-9b86-86020cf13a30
+		summarizeBy: none
+		sourceColumn: product_group
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 41a6828e-a02f-4a21-8006-fefd37eb0a60
+		summarizeBy: none
+		sourceColumn: period_date
+
+		variation Variation
+			isDefault
+			relationship: a6a5af7a-3553-4901-a85b-11c160112acc
+			defaultHierarchy: LocalDateTable_d75ddc91-f210-4e41-b1ae-47ba9c7dad2e.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'ราคาเฉลี่ย (บาท)'
+		dataType: double
+		lineageTag: a029c8b1-c53c-4f7b-8b13-5d518d0ca36b
+		summarizeBy: sum
+		sourceColumn: avg_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'ราคาต่ำสุด (บาท)'
+		dataType: double
+		lineageTag: db1abfb3-9c34-4a23-aed9-a8d994be18a1
+		summarizeBy: sum
+		sourceColumn: low_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'ราคาสูงสุด (บาท)'
+		dataType: double
+		lineageTag: 084e0aaa-06fe-4ef0-9b97-5233c96bcafc
+		summarizeBy: sum
+		sourceColumn: high_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column จำนวนวันที่มีราคา
+		dataType: int64
+		formatString: 0
+		lineageTag: 49dcc300-4bba-40ae-84d9-ff81998567db
+		summarizeBy: sum
+		sourceColumn: days_observed
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ราคาขายปลีกรายเดือน = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_retail_price_monthly_Sheet = Source{[Item="fact_retail_price_monthly",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_retail_price_monthly_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"product_id", type text}, {"label", type text}, {"unit", type text}, {"product_group", type text}, {"period_date", type date}, {"avg_price", type number}, {"low_price", type number}, {"high_price", type number}, {"days_observed", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

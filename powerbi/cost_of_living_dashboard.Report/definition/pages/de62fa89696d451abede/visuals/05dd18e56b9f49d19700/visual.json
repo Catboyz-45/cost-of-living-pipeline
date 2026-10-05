@@ -1,0 +1,100 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "05dd18e56b9f49d19700",
+  "position": {
+    "x": 20,
+    "y": 160,
+    "z": 3,
+    "height": 540,
+    "width": 700,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ค่าแรงที่แท้จริง"
+                    }
+                  },
+                  "Property": "เดือน"
+                }
+              },
+              "queryRef": "ค่าแรงที่แท้จริง.เดือน",
+              "nativeQueryRef": "เดือน",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ค่าแรงที่แท้จริง"
+                    }
+                  },
+                  "Property": "ค่าแรงขั้นต่ำเฉลี่ย (บาท/วัน)"
+                }
+              },
+              "queryRef": "ค่าแรงที่แท้จริง.ค่าแรงขั้นต่ำเฉลี่ย (บาท/วัน)",
+              "nativeQueryRef": "ค่าแรงขั้นต่ำเฉลี่ย (บาท/วัน)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ค่าแรงที่แท้จริง"
+                    }
+                  },
+                  "Property": "ค่าแรงที่แท้จริงเฉลี่ย (บาท ปี 2566)"
+                }
+              },
+              "queryRef": "ค่าแรงที่แท้จริง.ค่าแรงที่แท้จริงเฉลี่ย (บาท ปี 2566)",
+              "nativeQueryRef": "ค่าแรงที่แท้จริงเฉลี่ย (บาท ปี 2566)"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ค่าแรงขั้นต่ำ vs ค่าแรงที่แท้จริง (บาท/วัน)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

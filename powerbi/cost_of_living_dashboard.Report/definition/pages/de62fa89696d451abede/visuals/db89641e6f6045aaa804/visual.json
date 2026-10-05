@@ -1,0 +1,127 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "db89641e6f6045aaa804",
+  "position": {
+    "x": 740,
+    "y": 160,
+    "z": 4,
+    "height": 540,
+    "width": 520,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "สินค้า"
+                    }
+                  },
+                  "Property": "ชื่อสินค้า"
+                }
+              },
+              "queryRef": "สินค้า.ชื่อสินค้า",
+              "nativeQueryRef": "ชื่อสินค้า"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ราคาสินค้าเป็นบาท"
+                    }
+                  },
+                  "Property": "ราคา 10 ปีก่อน (บาท)"
+                }
+              },
+              "queryRef": "ราคาสินค้าเป็นบาท.ราคา 10 ปีก่อน (บาท)",
+              "nativeQueryRef": "ราคา 10 ปีก่อน (บาท)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ราคาสินค้าเป็นบาท"
+                    }
+                  },
+                  "Property": "ราคาล่าสุด (บาท)"
+                }
+              },
+              "queryRef": "ราคาสินค้าเป็นบาท.ราคาล่าสุด (บาท)",
+              "nativeQueryRef": "ราคาล่าสุด (บาท)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ราคาสินค้าเป็นบาท"
+                    }
+                  },
+                  "Property": "ราคาเปลี่ยนใน 10 ปี (%)"
+                }
+              },
+              "queryRef": "ราคาสินค้าเป็นบาท.ราคาเปลี่ยนใน 10 ปี (%)",
+              "nativeQueryRef": "ราคาเปลี่ยนใน 10 ปี (%)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "ราคาสินค้าเป็นบาท"
+                  }
+                },
+                "Property": "ราคาเปลี่ยนใน 10 ปี (%)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ราคาของกินของใช้ ตอนนี้ vs 10 ปีก่อน'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

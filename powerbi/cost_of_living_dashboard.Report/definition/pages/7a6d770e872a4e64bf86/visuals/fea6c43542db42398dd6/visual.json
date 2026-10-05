@@ -1,0 +1,104 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "fea6c43542db42398dd6",
+  "position": {
+    "x": 20,
+    "y": 160,
+    "z": 4,
+    "height": 540,
+    "width": 760,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ดัชนีราคา ประเทศและภาค"
+                    }
+                  },
+                  "Property": "เดือน"
+                }
+              },
+              "queryRef": "ดัชนีราคา ประเทศและภาค.เดือน",
+              "nativeQueryRef": "เดือน",
+              "active": true
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "หมวดสินค้า"
+                    }
+                  },
+                  "Property": "หมวดสินค้า"
+                }
+              },
+              "queryRef": "หมวดสินค้า.หมวดสินค้า",
+              "nativeQueryRef": "หมวดสินค้า"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ดัชนีราคา ประเทศและภาค"
+                    }
+                  },
+                  "Property": "ดัชนีหมวดหลัก ทั้งประเทศ"
+                }
+              },
+              "queryRef": "ดัชนีราคา ประเทศและภาค.ดัชนีหมวดหลัก ทั้งประเทศ",
+              "nativeQueryRef": "ดัชนีหมวดหลัก ทั้งประเทศ"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ดัชนีราคาทั้งประเทศ ตามหมวดหลัก (ปี 2566 = 100)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

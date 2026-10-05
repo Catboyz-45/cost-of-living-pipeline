@@ -1,0 +1,100 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "3ddd0aad7b96480f8b96",
+  "position": {
+    "x": 600,
+    "y": 160,
+    "z": 3,
+    "height": 540,
+    "width": 660,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ผลทายย้อนหลังของโมเดล"
+                    }
+                  },
+                  "Property": "เดือนที่ทาย"
+                }
+              },
+              "queryRef": "ผลทายย้อนหลังของโมเดล.เดือนที่ทาย",
+              "nativeQueryRef": "เดือนที่ทาย",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ผลทายย้อนหลังของโมเดล"
+                    }
+                  },
+                  "Property": "ทายไว้ (%)"
+                }
+              },
+              "queryRef": "ผลทายย้อนหลังของโมเดล.ทายไว้ (%)",
+              "nativeQueryRef": "ทายไว้ (%)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ผลทายย้อนหลังของโมเดล"
+                    }
+                  },
+                  "Property": "เกิดจริง (%)"
+                }
+              },
+              "queryRef": "ผลทายย้อนหลังของโมเดล.เกิดจริง (%)",
+              "nativeQueryRef": "เกิดจริง (%)"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ทายไว้ vs เกิดจริง (เงินเฟ้อทั่วไป รายเดือน %)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

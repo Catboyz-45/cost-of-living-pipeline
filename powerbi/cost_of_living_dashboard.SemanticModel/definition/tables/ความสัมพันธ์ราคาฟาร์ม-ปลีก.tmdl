@@ -1,0 +1,61 @@
+table ความสัมพันธ์ราคาฟาร์ม-ปลีก
+	lineageTag: 52d2aa3b-3bd5-45cd-9794-5b275f750d36
+
+	column สินค้าหน้าฟาร์ม
+		dataType: string
+		lineageTag: 50d51e5d-27ec-45a7-95ae-eb90b621ea0b
+		summarizeBy: none
+		sourceColumn: farm_item
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสหมวดสินค้า
+		dataType: int64
+		formatString: 0
+		lineageTag: 78f82b6b-9bf3-431b-9241-335af7227a13
+		summarizeBy: none
+		sourceColumn: commodity_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ราคาฟาร์มนำหน้า (เดือน)'
+		dataType: int64
+		formatString: 0
+		lineageTag: 6cc71159-d3b0-4763-a517-74f62457c4bb
+		summarizeBy: sum
+		sourceColumn: lag_months
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ค่าสหสัมพันธ์ (r)'
+		dataType: double
+		lineageTag: 036c09c1-b96d-4af6-9b90-9a8e1e6dda4d
+		summarizeBy: sum
+		sourceColumn: pearson_correlation
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column จำนวนเดือนที่ใช้
+		dataType: int64
+		formatString: 0
+		lineageTag: 42320d4a-0605-4ca0-9575-7002011ef42d
+		summarizeBy: sum
+		sourceColumn: sample_size
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ความสัมพันธ์ราคาฟาร์ม-ปลีก = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_farm_retail_correlation_Sheet = Source{[Item="fact_farm_retail_correlation",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_farm_retail_correlation_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"farm_item", type text}, {"commodity_code", Int64.Type}, {"lag_months", Int64.Type}, {"pearson_correlation", type number}, {"sample_size", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

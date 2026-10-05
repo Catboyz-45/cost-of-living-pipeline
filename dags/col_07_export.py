@@ -27,6 +27,103 @@ LITE_MAX_LEVEL = 2
 LITE_FROM_YEAR = 2016                # ดัชนีภาคและรายปี ตั้งแต่ปีนี้
 LITE_PROVINCE_MONTHS = 24            # ดัชนีจังหวัด กี่เดือนล่าสุด
 EXCEL_MAX_ROWS = 1_048_575  # จำนวนแถวสูงสุดต่อ sheet ของ Excel (ไม่นับหัวตาราง)
+WIDTH_SAMPLE_ROWS = 300     # อ่านกี่แถวแรกมาคำนวณความกว้างคอลัมน์ (กันวันที่ขึ้น ####)
+
+# ไฟล์เต็มให้คนเปิดอ่านใน Excel จึงใช้ชื่อ sheet และหัวคอลัมน์ภาษาไทย
+# ส่วนไฟล์ lite ยังใช้ชื่ออังกฤษ เพราะรายงาน Power BI โยง Relationship ด้วยชื่อคอลัมน์เหล่านี้
+THAI_SHEET_NAMES = {  # ชื่อ sheet ยาวได้ไม่เกิน 31 ตัวอักษร
+    "dim_area.csv": "พื้นที่",
+    "dim_commodity.csv": "หมวดสินค้า",
+    "dim_product.csv": "สินค้า",
+    "fact_retail_price_monthly.csv": "ราคาขายปลีกรายเดือน",
+    "fact_cpi_region_monthly.csv": "ดัชนีราคา ประเทศและภาค",
+    "fact_cpi_province_monthly_recent.csv": "ดัชนีราคา จังหวัด 36 เดือน",
+    "fact_cpi_yearly.csv": "ดัชนีราคารายปี",
+    "fact_forecast.csv": "พยากรณ์เดือนหน้า",
+    "fact_price_estimates.csv": "ราคาสินค้าเป็นบาท",
+    "fact_real_wage.csv": "ค่าแรงที่แท้จริง",
+    "fact_farm_prices.csv": "ราคาหน้าฟาร์ม",
+    "fact_farm_retail_correlation.csv": "ความสัมพันธ์ราคาฟาร์ม-ปลีก",
+    "fact_model_backtest.csv": "ผลทายย้อนหลังของโมเดล",
+    "model_metrics.csv": "ความแม่นยำของโมเดล",
+    "data_volume.csv": "จำนวนแถวในระบบ",
+}
+THAI_COLUMNS = {
+    "area_key": "รหัสพื้นที่ (คีย์)",
+    "area_type": "ประเภทพื้นที่",
+    "area_code": "รหัสพื้นที่",
+    "area_name": "ชื่อพื้นที่",
+    "region_code": "รหัสภาค",
+    "region_name": "ภาค",
+    "country": "ประเทศ",
+    "commodity_code": "รหัสหมวดสินค้า",
+    "commodity_name": "หมวดสินค้า",
+    "level": "ระดับหมวด",
+    "product_id": "รหัสสินค้า",
+    "label": "ชื่อสินค้า",
+    "product_name": "ชื่อสินค้า (ต้นทาง)",
+    "unit": "หน่วย",
+    "cpi_code": "รหัสหมวดดัชนี",
+    "product_group": "กลุ่มสินค้า",
+    "source": "แหล่งข้อมูล",
+    "period_date": "เดือน",
+    "avg_price": "ราคาเฉลี่ย (บาท)",
+    "low_price": "ราคาต่ำสุด (บาท)",
+    "high_price": "ราคาสูงสุด (บาท)",
+    "days_observed": "จำนวนวันที่มีราคา",
+    "index_value": "ดัชนี (ปี 2566 = 100)",
+    "change_mom": "เปลี่ยนจากเดือนก่อน (%)",
+    "change_yoy": "เปลี่ยนจากปีก่อน (%)",
+    "year_ce": "ปี ค.ศ.",
+    "year_be": "ปี พ.ศ.",
+    "avg_index": "ดัชนีเฉลี่ยทั้งปี",
+    "yoy_pct": "เปลี่ยนจากปีก่อน (%)",
+    "months_covered": "จำนวนเดือนที่มีข้อมูล",
+    "base_period": "เดือนฐาน",
+    "target_period": "เดือนที่ทาย",
+    "base_index": "ดัชนีเดือนฐาน",
+    "predicted_index": "ดัชนีที่ทาย",
+    "predicted_change_pct": "เปลี่ยนแปลงที่ทาย (%)",
+    "direction": "ทิศทาง",
+    "model_name": "ชื่อโมเดล",
+    "predicted_at": "เวลาที่ทาย",
+    "actual_price": "ราคาจริง (บาท)",
+    "estimated_price": "ราคาประมาณ (บาท)",
+    "anchor_period": "เดือนราคาอ้างอิง",
+    "anchor_price": "ราคาอ้างอิง (บาท)",
+    "province_code": "รหัสจังหวัด",
+    "province_name": "จังหวัด",
+    "nominal_wage": "ค่าแรงขั้นต่ำ (บาท/วัน)",
+    "cpi_all_items": "ดัชนีสินค้าทั้งหมด",
+    "cpi_food": "ดัชนีอาหาร",
+    "real_wage": "ค่าแรงที่แท้จริง (บาท ปี 2566)",
+    "eggs_per_day_wage": "ซื้อไข่ไก่ได้ (ฟอง/ค่าแรง 1 วัน)",
+    "item_name": "รายการ",
+    "price": "ราคา",
+    "farm_item": "สินค้าหน้าฟาร์ม",
+    "lag_months": "ราคาฟาร์มนำหน้า (เดือน)",
+    "pearson_correlation": "ค่าสหสัมพันธ์ (r)",
+    "sample_size": "จำนวนเดือนที่ใช้",
+    "actual_change_pct": "เปลี่ยนแปลงจริง (%)",
+    "model_trained_through": "โมเดลเทรนถึงเดือน",
+    "run_at": "เวลาที่เทรน",
+    "rmse": "RMSE",
+    "mae": "MAE",
+    "r2": "R²",
+    "baseline_rmse": "RMSE ของ baseline",
+    "direction_accuracy": "ทายทิศทางถูก (%)",
+    "training_rows": "แถวที่ใช้เทรน",
+    "holdout_rows": "แถวที่ใช้ทดสอบ",
+    "deployed": "ใช้งานจริง",
+    "table_name": "ตาราง",
+    "row_count": "จำนวนแถว",
+}
+# ค่าที่เป็นภาษาอังกฤษในข้อมูล แปลงเป็นไทยในไฟล์เต็ม
+THAI_VALUES = {
+    "area_type": {"region": "ประเทศ/ภาค", "province": "จังหวัด"},
+    "country": {"Thailand": "ประเทศไทย"},
+    "deployed": {"t": "ใช่", "f": "ไม่ใช่", "true": "ใช่", "false": "ไม่ใช่"},
+}
 TEXT_COLUMNS = {
     "area_key", "area_code", "commodity_code", "province_code",
     "product_id", "cpi_code", "region_code",
@@ -184,7 +281,7 @@ def export_powerbi(**_: Any) -> dict[str, Any]:
     finally:
         connection.close()
 
-    manifest["excel"] = _write_excel(manifest["files"])
+    manifest["excel"] = _write_excel(manifest["files"], thai=True)
     manifest["excel_lite"] = _write_excel(manifest["files"], EXCEL_LITE_FILE, _lite_filter())
     (EXPORT_DIR / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -243,14 +340,30 @@ def _lite_filter() -> Any:
     return keep
 
 
-def _write_excel(files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: Any = None) -> dict[str, Any]:
+def _column_widths(header: list[str], titles: list[str], sample: list[list[str]]) -> list[float]:
+    """ความกว้างคอลัมน์จากหัวตารางและข้อมูลช่วงแรก (วันที่ต้องกว้างพอ ไม่งั้น Excel แสดง ####)."""
+    widths = []
+    for index, (column, title) in enumerate(zip(header, titles)):
+        longest = max([len(title)] + [len(row[index]) for row in sample if index < len(row)])
+        if column.endswith(("_date", "_period")):
+            longest = max(longest, 10)  # yyyy-mm-dd
+        widths.append(min(max(longest + 2, 8), 60))
+    return widths
+
+
+def _write_excel(
+    files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: Any = None, thai: bool = False
+) -> dict[str, Any]:
     """รวม CSV ทุกไฟล์เป็น Excel ไฟล์เดียว (หนึ่ง sheet ต่อหนึ่งตาราง).
 
     keep_row(ชื่อไฟล์, แถวเป็น dict) ใช้กรองแถวสำหรับไฟล์ฉบับย่อ ถ้าไม่ส่งมาจะเก็บทุกแถว
+    thai=True ใช้ชื่อ sheet หัวคอลัมน์ และค่าบางคอลัมน์เป็นภาษาไทย (ไฟล์สำหรับคนเปิดอ่าน)
 
     ใช้ xlsxwriter แบบ constant_memory ซึ่งเขียนทีละแถวลงดิสก์ ไม่เก็บทั้งไฟล์ไว้ใน RAM
     (โหมดนี้ต้องเขียนเรียงแถว จึงไม่ใช้ pandas.to_excel ที่เขียนทีละคอลัมน์)
     """
+    import itertools
+
     import xlsxwriter
 
     target = EXPORT_DIR / excel_file
@@ -258,9 +371,12 @@ def _write_excel(files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: 
     sheets = {}
     workbook = xlsxwriter.Workbook(str(temporary), {"constant_memory": True})
     date_format = workbook.add_format({"num_format": "yyyy-mm-dd"})
+    header_format = workbook.add_format({"bold": True, "bg_color": "#EDEAE4", "bottom": 1})
     try:
         for file_name, info in files.items():
-            sheet_name = file_name.removesuffix(".csv")[:31]  # ชื่อ sheet ยาวได้ไม่เกิน 31 ตัวอักษร
+            # ชื่อ sheet ยาวได้ไม่เกิน 31 ตัวอักษร
+            default_name = file_name.removesuffix(".csv")
+            sheet_name = (THAI_SHEET_NAMES.get(file_name, default_name) if thai else default_name)[:31]
             if keep_row is None and info["rows"] > EXCEL_MAX_ROWS:
                 print(f"WARN {file_name} has {info['rows']:,} rows; too many for one Excel sheet")
                 continue
@@ -268,9 +384,15 @@ def _write_excel(files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: 
             with (EXPORT_DIR / file_name).open(encoding="utf-8-sig", newline="") as handle:
                 reader = csv.reader(handle)
                 header = next(reader)
-                worksheet.write_row(0, 0, header)
+                titles = [THAI_COLUMNS.get(column, column) for column in header] if thai else header
+                # อ่านช่วงแรกมาคำนวณความกว้างก่อน แล้วเขียนต่อจากตรงนั้น (ยังเขียนเรียงแถวได้)
+                sample = list(itertools.islice(reader, WIDTH_SAMPLE_ROWS))
+                for column_number, width in enumerate(_column_widths(header, titles, sample)):
+                    worksheet.set_column(column_number, column_number, width)
+                worksheet.write_row(0, 0, titles, header_format)
+                worksheet.freeze_panes(1, 0)  # หัวตารางค้างไว้ตอนเลื่อนลง
                 row_number = 0
-                for row in reader:
+                for row in itertools.chain(sample, reader):
                     if keep_row is not None and not keep_row(file_name, dict(zip(header, row))):
                         continue
                     row_number += 1
@@ -278,6 +400,8 @@ def _write_excel(files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: 
                         print(f"WARN {file_name} truncated at {EXCEL_MAX_ROWS:,} rows")
                         break
                     for column_number, (column, text) in enumerate(zip(header, row)):
+                        if thai and column in THAI_VALUES:
+                            text = THAI_VALUES[column].get(text, text)
                         value = _excel_value(column, text)
                         if value is None:
                             continue
@@ -285,6 +409,8 @@ def _write_excel(files: dict[str, Any], excel_file: str = EXCEL_FILE, keep_row: 
                             worksheet.write_datetime(row_number, column_number, value, date_format)
                         else:
                             worksheet.write(row_number, column_number, value)
+                if row_number:
+                    worksheet.autofilter(0, 0, min(row_number, EXCEL_MAX_ROWS), len(header) - 1)
             sheets[sheet_name] = row_number
     finally:
         workbook.close()

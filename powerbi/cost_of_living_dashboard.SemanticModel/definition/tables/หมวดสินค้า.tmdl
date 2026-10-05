@@ -1,0 +1,42 @@
+table หมวดสินค้า
+	lineageTag: f38e51cb-565b-4034-8cae-ab94886e8ac7
+
+	column รหัสหมวดสินค้า
+		dataType: int64
+		formatString: 0
+		lineageTag: 1279f88b-8d51-4a07-8861-19b0b45f1338
+		summarizeBy: none
+		sourceColumn: commodity_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column หมวดสินค้า
+		dataType: string
+		lineageTag: 8898076a-d4b6-4b6a-960a-33b6a8fb7f2f
+		summarizeBy: none
+		sourceColumn: commodity_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column ระดับหมวด
+		dataType: int64
+		formatString: 0
+		lineageTag: 91ea0139-4f0a-40a6-81df-1a74d0533179
+		summarizeBy: sum
+		sourceColumn: level
+
+		annotation SummarizationSetBy = Automatic
+
+	partition หมวดสินค้า = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    dim_commodity_Sheet = Source{[Item="dim_commodity",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(dim_commodity_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"commodity_code", Int64.Type}, {"commodity_name", type text}, {"level", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

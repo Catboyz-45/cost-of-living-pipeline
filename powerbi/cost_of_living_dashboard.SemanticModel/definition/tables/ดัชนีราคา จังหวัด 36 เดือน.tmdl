@@ -1,0 +1,87 @@
+table 'ดัชนีราคา จังหวัด 36 เดือน'
+	lineageTag: e235cd81-ddc9-44cc-9752-c8ab7a3c2eff
+
+	measure 'เงินเฟ้อจังหวัด (%)' = VAR d = CALCULATE(MAX('ดัชนีราคา จังหวัด 36 เดือน'[เดือน]), REMOVEFILTERS()) RETURN CALCULATE(AVERAGE('ดัชนีราคา จังหวัด 36 เดือน'[เปลี่ยนจากปีก่อน (%)]), 'ดัชนีราคา จังหวัด 36 เดือน'[เดือน] = d, 'ดัชนีราคา จังหวัด 36 เดือน'[รหัสหมวดสินค้า] = 0)
+		formatString: 0.00
+		lineageTag: e472d234-a9f8-441f-a7a9-5971acb9e923
+
+	measure 'เงินเฟ้ออาหารจังหวัด (%)' = VAR d = CALCULATE(MAX('ดัชนีราคา จังหวัด 36 เดือน'[เดือน]), REMOVEFILTERS()) RETURN CALCULATE(AVERAGE('ดัชนีราคา จังหวัด 36 เดือน'[เปลี่ยนจากปีก่อน (%)]), 'ดัชนีราคา จังหวัด 36 เดือน'[เดือน] = d, 'ดัชนีราคา จังหวัด 36 เดือน'[รหัสหมวดสินค้า] = 10000)
+		formatString: 0.00
+		lineageTag: 6cb73be2-faeb-41d0-ae2b-c35d399a9a08
+
+	column 'รหัสพื้นที่ (คีย์)'
+		dataType: string
+		lineageTag: 388e88c7-17d9-4f39-b931-6906ce316de6
+		summarizeBy: none
+		sourceColumn: area_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสหมวดสินค้า
+		dataType: int64
+		formatString: 0
+		lineageTag: 0c6698c4-1e3a-490c-8430-bf2436bc8d42
+		summarizeBy: none
+		sourceColumn: commodity_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 2ee3aed5-0313-4c50-96ed-3efdeff4493b
+		summarizeBy: none
+		sourceColumn: period_date
+
+		variation Variation
+			isDefault
+			relationship: 2e63a69b-82bd-4475-a1fa-099f582ef21b
+			defaultHierarchy: LocalDateTable_5294782a-c148-4ce8-ac93-d1f5c726a98b.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'ดัชนี (ปี 2566 = 100)'
+		dataType: double
+		lineageTag: 5ce7bd38-0b8e-4392-b9b5-fcb200569cdc
+		summarizeBy: sum
+		sourceColumn: index_value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'เปลี่ยนจากเดือนก่อน (%)'
+		dataType: double
+		lineageTag: c061838e-9d1d-4763-ba57-783dbf40eac8
+		summarizeBy: sum
+		sourceColumn: change_mom
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'เปลี่ยนจากปีก่อน (%)'
+		dataType: double
+		lineageTag: be5ed0d6-954c-4866-b64f-34b588bd1df7
+		summarizeBy: sum
+		sourceColumn: change_yoy
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition 'ดัชนีราคา จังหวัด 36 เดือน' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_cpi_province_monthly_recen_Sheet = Source{[Item="fact_cpi_province_monthly_recen",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_cpi_province_monthly_recen_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"area_key", type text}, {"commodity_code", Int64.Type}, {"period_date", type date}, {"index_value", type number}, {"change_mom", type number}, {"change_yoy", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

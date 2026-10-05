@@ -64,10 +64,8 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); flex: none; }
 .brand:hover { color: var(--ink); }
-.brand-mark {
-  width: 40px; height: 40px; border-radius: 12px; background: var(--ink); color: #f7c08a;
-  display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 20px;
-}
+/* โลโก้เป็นรูป PNG มุมโค้งโปร่งใสอยู่แล้ว */
+.brand-mark { width: 40px; height: 40px; flex: none; display: block; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-text strong { font-family: var(--display); font-size: 18px; font-weight: 700; }
 .brand-text small { font-size: 12px; color: var(--muted); }
@@ -86,6 +84,11 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; }
 .nav-ai { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--ai-wash); color: var(--ai); }
 .nav a.nav-tech { margin-left: auto; border: 1px solid var(--border); font-size: 14px; }
 .nav a.nav-tech.active { border-color: var(--ink); }
+.nav a.nav-download { border: 1px solid var(--ink); color: var(--ink); font-size: 14px; font-weight: 600; }
+.nav a.nav-download:hover { background: var(--ink); color: var(--page); }
+/* แถบเมนูเต็มแล้ว ปุ่มนี้จึงใช้ชื่อสั้น "Excel" + ไอคอนดาวน์โหลดทุกขนาดจอ */
+.nav a.nav-download .full { display: none; }
+.nav a.nav-download .short { display: inline; }
 
 .main { padding: 56px clamp(16px, 4vw, 64px) 80px; max-width: 1440px; margin: 0 auto; }
 .page { display: flex; flex-direction: column; gap: 56px; }
@@ -610,8 +613,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   .nav a::before { display: none; }
   .nav a { padding: 0 10px; }
 }
-@media (max-width: 1320px) {
-  /* เมนู 6 หน้าไม่พอที่ในจอกลาง ใช้ชื่อสั้นแบบเดียวกับมือถือ */
+@media (max-width: 1400px) {
+  /* เมนู 6 หน้า + ปุ่ม Excel ไม่พอที่ในจอกลาง ใช้ชื่อสั้นแบบเดียวกับมือถือ */
   .topbar { gap: 20px; }
   .nav a { padding: 0 12px; font-size: 14px; }
   .nav .full, .nav-ai { display: none; }
@@ -634,18 +637,18 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 /* ---------- มือถือ: เมนูย้ายไปล่างจอแบบแอป ---------- */
 @media (max-width: 760px) {
   .topbar { height: 60px; gap: 12px; backdrop-filter: none; background: var(--page); }
-  .brand-mark { width: 32px; height: 32px; border-radius: 10px; font-size: 17px; }
+  .brand-mark { width: 32px; height: 32px; }
   .brand-text strong { font-size: 17px; }
   .nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; gap: 0; padding: 6px 8px calc(10px + env(safe-area-inset-bottom));
     background: var(--surface); border-top: 1px solid var(--border);
   }
-  .nav a, .nav a.nav-tech {
+  .nav a, .nav a.nav-tech, .nav a.nav-download {
     flex: 1 1 0; flex-direction: column; justify-content: center; gap: 3px; height: auto; min-height: 56px; padding: 0;
     margin: 0; border: 0; border-radius: 0; font-size: 11px; color: var(--muted); background: none;
   }
   .nav a::before { width: 44px; height: 28px; border-radius: 999px; -webkit-mask-size: 18px; mask-size: 18px; }
-  .nav a:hover { background: none; }
+  .nav a:hover, .nav a.nav-download:hover { background: none; color: var(--ink); }
   .nav a.active { background: none; color: var(--ink); }
   .nav a.active::before { background: var(--ink); }
   .nav .full, .nav-ai { display: none; }

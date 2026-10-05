@@ -1,0 +1,58 @@
+table ราคาหน้าฟาร์ม
+	lineageTag: e6118809-9bb0-43b4-a2d2-7c038a19396f
+
+	column รายการ
+		dataType: string
+		lineageTag: ea45616b-25ae-4ec8-9e98-4cfdf6c093de
+		summarizeBy: none
+		sourceColumn: item_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: ea8d0471-4989-4f3e-bf5b-2038f55e4dbe
+		summarizeBy: none
+		sourceColumn: period_date
+
+		variation Variation
+			isDefault
+			relationship: 542db80f-2964-439e-9e6f-f5b19a1ac509
+			defaultHierarchy: LocalDateTable_36d0aac9-b09f-4acd-a29c-44b24995743f.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ราคา
+		dataType: double
+		lineageTag: 207dd856-f675-47d4-9d41-62d2464dd663
+		summarizeBy: sum
+		sourceColumn: price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column หน่วย
+		dataType: string
+		lineageTag: 6f025d3a-bdb1-4142-910e-0f25c8723385
+		summarizeBy: none
+		sourceColumn: unit
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ราคาหน้าฟาร์ม = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_farm_prices_Sheet = Source{[Item="fact_farm_prices",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_farm_prices_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"item_name", type text}, {"period_date", type date}, {"price", type number}, {"unit", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

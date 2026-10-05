@@ -1,0 +1,88 @@
+table ดัชนีราคารายปี
+	lineageTag: 549d4bdc-3848-4dfc-b609-7f49f54487d7
+
+	measure 'เงินเฟ้อรายปี ทั้งประเทศ (%)' = CALCULATE(AVERAGE('ดัชนีราคารายปี'[เปลี่ยนจากปีก่อน (%)]), 'ดัชนีราคารายปี'[รหัสพื้นที่ (คีย์)] = "region:TG", 'ดัชนีราคารายปี'[รหัสหมวดสินค้า] = 0)
+		formatString: 0.00
+		lineageTag: 8336fef9-239d-4a8d-9657-dfdbf52ffd5c
+
+	measure 'เงินเฟ้อปีล่าสุด ตามหมวด (%)' = VAR y = CALCULATE(MAX('ดัชนีราคารายปี'[ปี ค.ศ.]), REMOVEFILTERS()) RETURN IF(SELECTEDVALUE('หมวดสินค้า'[รหัสหมวดสินค้า]) IN {10000,20000,30000,40000,50000,60000,70000}, CALCULATE(AVERAGE('ดัชนีราคารายปี'[เปลี่ยนจากปีก่อน (%)]), 'ดัชนีราคารายปี'[ปี ค.ศ.] = y, 'ดัชนีราคารายปี'[รหัสพื้นที่ (คีย์)] = "region:TG"))
+		formatString: 0.00
+		lineageTag: 57e49090-dd04-4f0b-8fe6-a6a1306aa49c
+
+	column 'รหัสพื้นที่ (คีย์)'
+		dataType: string
+		lineageTag: 6d7d6e6b-7628-42d6-8426-9da6f5a8f5fa
+		summarizeBy: none
+		sourceColumn: area_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสหมวดสินค้า
+		dataType: int64
+		formatString: 0
+		lineageTag: dbdf36d9-544a-4664-ac46-dfaf6dfd92b1
+		summarizeBy: none
+		sourceColumn: commodity_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ปี ค.ศ.'
+		dataType: int64
+		formatString: 0
+		lineageTag: 759ca0c8-2650-4a60-90d6-99aca70efd60
+		summarizeBy: sum
+		sourceColumn: year_ce
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ปี พ.ศ.'
+		dataType: int64
+		formatString: 0
+		lineageTag: 47fd54ea-a87d-49db-8154-0ed66c61fe92
+		summarizeBy: sum
+		sourceColumn: year_be
+
+		annotation SummarizationSetBy = Automatic
+
+	column ดัชนีเฉลี่ยทั้งปี
+		dataType: double
+		lineageTag: 6e702d9f-027c-4d26-b1e2-2cb2cd43b4cf
+		summarizeBy: sum
+		sourceColumn: avg_index
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'เปลี่ยนจากปีก่อน (%)'
+		dataType: double
+		lineageTag: 781b098e-abda-4bef-a485-d70c18b6d466
+		summarizeBy: sum
+		sourceColumn: yoy_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column จำนวนเดือนที่มีข้อมูล
+		dataType: int64
+		formatString: 0
+		lineageTag: 8aa8e71c-994a-44a3-8a99-b30414192ee6
+		summarizeBy: sum
+		sourceColumn: months_covered
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ดัชนีราคารายปี = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_cpi_yearly_Sheet = Source{[Item="fact_cpi_yearly",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_cpi_yearly_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"area_key", type text}, {"commodity_code", Int64.Type}, {"year_ce", Int64.Type}, {"year_be", Int64.Type}, {"avg_index", type number}, {"yoy_pct", type number}, {"months_covered", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

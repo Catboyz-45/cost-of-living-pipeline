@@ -246,6 +246,7 @@ services:
         condition: service_healthy
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}/models:/models:ro   # อ่านอย่างเดียว ไม่ได้เขียนกลับ
+      - ${AIRFLOW_PROJ_DIR:-.}/exports:/exports:ro # ไฟล์ Excel ให้ดาวน์โหลดจากหน้าเว็บ
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 30s

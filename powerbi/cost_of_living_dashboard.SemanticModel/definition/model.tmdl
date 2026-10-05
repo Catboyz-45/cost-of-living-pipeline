@@ -1,0 +1,48 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: th-TH
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["จำนวนแถวในระบบ", "พื้นที่", "หมวดสินค้า", "สินค้า", "ดัชนีราคา จังหวัด 36 เดือน", "ดัชนีราคา ประเทศและภาค", "ดัชนีราคารายปี", "ราคาหน้าฟาร์ม", "ความสัมพันธ์ราคาฟาร์ม-ปลีก", "พยากรณ์เดือนหน้า", "ผลทายย้อนหลังของโมเดล", "ราคาสินค้าเป็นบาท", "ค่าแรงที่แท้จริง", "ราคาขายปลีกรายเดือน", "ความแม่นยำของโมเดล"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table จำนวนแถวในระบบ
+ref table พื้นที่
+ref table หมวดสินค้า
+ref table สินค้า
+ref table 'ดัชนีราคา จังหวัด 36 เดือน'
+ref table DateTableTemplate_86d0c81d-73aa-47b7-be11-0f3aec5d0e88
+ref table LocalDateTable_5294782a-c148-4ce8-ac93-d1f5c726a98b
+ref table 'ดัชนีราคา ประเทศและภาค'
+ref table LocalDateTable_df996de3-3477-48e3-a8b9-2ec408110a3f
+ref table ดัชนีราคารายปี
+ref table ราคาหน้าฟาร์ม
+ref table LocalDateTable_36d0aac9-b09f-4acd-a29c-44b24995743f
+ref table ความสัมพันธ์ราคาฟาร์ม-ปลีก
+ref table พยากรณ์เดือนหน้า
+ref table LocalDateTable_48474b49-a952-4bd8-9fb2-2fe0757d7d5e
+ref table LocalDateTable_71fca037-6d58-48e9-b464-b9a08696689b
+ref table LocalDateTable_351948cb-9841-409f-8687-ed02e0f82811
+ref table ผลทายย้อนหลังของโมเดล
+ref table LocalDateTable_7175ffdd-99e3-4774-81fb-6cc2b704fa61
+ref table LocalDateTable_804ca46a-ca8d-4ead-948e-9cf66a078d5f
+ref table LocalDateTable_ac6a27ef-93d4-4a1b-937e-6edc126db679
+ref table ราคาสินค้าเป็นบาท
+ref table ค่าแรงที่แท้จริง
+ref table LocalDateTable_d3983674-9273-4b30-8066-5ea51c87ae4d
+ref table ราคาขายปลีกรายเดือน
+ref table LocalDateTable_d75ddc91-f210-4e41-b1ae-47ba9c7dad2e
+ref table ความแม่นยำของโมเดล
+ref table LocalDateTable_064821a5-554b-482b-968b-aa379463d59d
+ref table LocalDateTable_b77b24ca-fd1b-4ef5-bac4-e304772baa42
+ref table LocalDateTable_45c09b00-c327-4d1f-85f2-e747a30c2884
+
+ref cultureInfo en-US
+

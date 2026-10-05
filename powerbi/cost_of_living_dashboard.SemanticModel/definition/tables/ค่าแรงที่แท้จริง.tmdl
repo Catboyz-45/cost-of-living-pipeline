@@ -1,0 +1,122 @@
+table ค่าแรงที่แท้จริง
+	lineageTag: 1d9b7782-a5e0-4ed4-af77-0cdac5fc71ba
+
+	measure 'ค่าแรงขั้นต่ำเฉลี่ย (บาท/วัน)' = AVERAGE('ค่าแรงที่แท้จริง'[ค่าแรงขั้นต่ำ (บาท/วัน)])
+		formatString: 0.00
+		lineageTag: 27bbd17d-1b70-488e-b7dc-348bd9d6f938
+
+	measure 'ค่าแรงที่แท้จริงเฉลี่ย (บาท ปี 2566)' = AVERAGE('ค่าแรงที่แท้จริง'[ค่าแรงที่แท้จริง (บาท ปี 2566)])
+		formatString: 0.00
+		lineageTag: 6db0b56f-4991-4b33-8dc7-e6de3fe2d427
+
+	measure 'ไข่ไก่ที่ซื้อได้ด้วยค่าแรง 1 วัน (ฟอง)' = VAR d = CALCULATE(MAX('ค่าแรงที่แท้จริง'[เดือน]), REMOVEFILTERS('ค่าแรงที่แท้จริง'[เดือน])) RETURN CALCULATE(AVERAGE('ค่าแรงที่แท้จริง'[ซื้อไข่ไก่ได้ (ฟอง/ค่าแรง 1 วัน)]), 'ค่าแรงที่แท้จริง'[เดือน] = d)
+		formatString: 0
+		lineageTag: 7fbfa8ab-96a2-4fbb-ac44-6ce2c64e28e6
+
+	measure 'ค่าแรงที่แท้จริงเปลี่ยนไป (%)' = VAR f = CALCULATE(MIN('ค่าแรงที่แท้จริง'[เดือน]), REMOVEFILTERS('ค่าแรงที่แท้จริง'[เดือน])) VAR l = CALCULATE(MAX('ค่าแรงที่แท้จริง'[เดือน]), REMOVEFILTERS('ค่าแรงที่แท้จริง'[เดือน])) VAR a = CALCULATE(AVERAGE('ค่าแรงที่แท้จริง'[ค่าแรงที่แท้จริง (บาท ปี 2566)]), 'ค่าแรงที่แท้จริง'[เดือน] = f) VAR b = CALCULATE(AVERAGE('ค่าแรงที่แท้จริง'[ค่าแรงที่แท้จริง (บาท ปี 2566)]), 'ค่าแรงที่แท้จริง'[เดือน] = l) RETURN DIVIDE(b - a, a) * 100
+		formatString: 0.00
+		lineageTag: aa0a3181-12b5-4aa6-9335-779ed6310c61
+
+	column 'รหัสพื้นที่ (คีย์)'
+		dataType: string
+		lineageTag: 3232c299-623f-475f-844e-06efc1f4bf7c
+		summarizeBy: none
+		sourceColumn: area_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสจังหวัด
+		dataType: int64
+		formatString: 0
+		lineageTag: dd3d47d3-d80e-4b14-b298-f61e8f5b7c3c
+		summarizeBy: sum
+		sourceColumn: province_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column จังหวัด
+		dataType: string
+		lineageTag: 8b224952-bf4b-4e70-891b-d91e052e9b9a
+		summarizeBy: none
+		sourceColumn: province_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: a40a10d7-3a0f-4036-92ec-2863b1c79479
+		summarizeBy: none
+		sourceColumn: period_date
+
+		variation Variation
+			isDefault
+			relationship: 8fb2236c-d1fa-40e6-8ea4-9d4bc894c966
+			defaultHierarchy: LocalDateTable_d3983674-9273-4b30-8066-5ea51c87ae4d.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'ค่าแรงขั้นต่ำ (บาท/วัน)'
+		dataType: int64
+		formatString: 0
+		lineageTag: 59ee5434-5aa0-4ada-99a9-25679ba90d81
+		summarizeBy: sum
+		sourceColumn: nominal_wage
+
+		annotation SummarizationSetBy = Automatic
+
+	column ดัชนีสินค้าทั้งหมด
+		dataType: double
+		lineageTag: 92e26ad6-f8e8-4f39-b741-2805439ff54b
+		summarizeBy: sum
+		sourceColumn: cpi_all_items
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ดัชนีอาหาร
+		dataType: double
+		lineageTag: 2fb4b6dd-063b-40db-8f01-b9a59c2e1979
+		summarizeBy: sum
+		sourceColumn: cpi_food
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'ค่าแรงที่แท้จริง (บาท ปี 2566)'
+		dataType: double
+		lineageTag: bc631d87-e768-465f-837e-0a3cc9a44f5c
+		summarizeBy: sum
+		sourceColumn: real_wage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'ซื้อไข่ไก่ได้ (ฟอง/ค่าแรง 1 วัน)'
+		dataType: double
+		lineageTag: e47969dc-8fb3-4095-a694-42cfce591ae2
+		summarizeBy: sum
+		sourceColumn: eggs_per_day_wage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition ค่าแรงที่แท้จริง = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_real_wage_Sheet = Source{[Item="fact_real_wage",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_real_wage_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"area_key", type text}, {"province_code", Int64.Type}, {"province_name", type text}, {"period_date", type date}, {"nominal_wage", Int64.Type}, {"cpi_all_items", type number}, {"cpi_food", type number}, {"real_wage", type number}, {"eggs_per_day_wage", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

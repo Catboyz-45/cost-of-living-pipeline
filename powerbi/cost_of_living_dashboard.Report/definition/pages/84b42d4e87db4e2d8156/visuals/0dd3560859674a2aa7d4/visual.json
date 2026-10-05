@@ -1,0 +1,99 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "0dd3560859674a2aa7d4",
+  "position": {
+    "x": 20,
+    "y": 160,
+    "z": 2,
+    "height": 540,
+    "width": 560,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "หมวดสินค้า"
+                    }
+                  },
+                  "Property": "หมวดสินค้า"
+                }
+              },
+              "queryRef": "หมวดสินค้า.หมวดสินค้า",
+              "nativeQueryRef": "หมวดสินค้า"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "พยากรณ์เดือนหน้า"
+                    }
+                  },
+                  "Property": "AI ทาย ทั้งประเทศ (%)"
+                }
+              },
+              "queryRef": "พยากรณ์เดือนหน้า.AI ทาย ทั้งประเทศ (%)",
+              "nativeQueryRef": "AI ทาย ทั้งประเทศ (%)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "พยากรณ์เดือนหน้า"
+                  }
+                },
+                "Property": "AI ทาย ทั้งประเทศ (%)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'AI ทาย % เปลี่ยนแปลงเดือนหน้า ทั้งประเทศ ตามหมวด'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

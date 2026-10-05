@@ -1,0 +1,109 @@
+table ผลทายย้อนหลังของโมเดล
+	lineageTag: c6637d1e-b8b7-40ca-a7f6-440896472171
+
+	measure 'ทายไว้ (%)' = CALCULATE(AVERAGE('ผลทายย้อนหลังของโมเดล'[เปลี่ยนแปลงที่ทาย (%)]), 'ผลทายย้อนหลังของโมเดล'[รหัสพื้นที่ (คีย์)] = "region:TG", 'ผลทายย้อนหลังของโมเดล'[รหัสหมวดสินค้า] = 0)
+		formatString: 0.00
+		lineageTag: 9ad5fb8a-bdf7-428d-8378-f8e048f320a5
+
+	measure 'เกิดจริง (%)' = CALCULATE(AVERAGE('ผลทายย้อนหลังของโมเดล'[เปลี่ยนแปลงจริง (%)]), 'ผลทายย้อนหลังของโมเดล'[รหัสพื้นที่ (คีย์)] = "region:TG", 'ผลทายย้อนหลังของโมเดล'[รหัสหมวดสินค้า] = 0)
+		formatString: 0.00
+		lineageTag: 5f58616e-cd7b-4eb1-82a8-dd897fd13120
+
+	column 'รหัสพื้นที่ (คีย์)'
+		dataType: string
+		lineageTag: 64eac7a3-4aa6-404e-85c1-0b3e38354d8b
+		summarizeBy: none
+		sourceColumn: area_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column รหัสหมวดสินค้า
+		dataType: int64
+		formatString: 0
+		lineageTag: 89d81f1c-6dcf-4d27-965d-b3a123f037cc
+		summarizeBy: none
+		sourceColumn: commodity_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column เดือนฐาน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 9f48218f-8eda-4c40-942c-369e822fc645
+		summarizeBy: none
+		sourceColumn: base_period
+
+		variation Variation
+			isDefault
+			relationship: 26fe22c2-c124-49c0-840e-80277cf6c74f
+			defaultHierarchy: LocalDateTable_7175ffdd-99e3-4774-81fb-6cc2b704fa61.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column เดือนที่ทาย
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: eee68f1d-c2e2-4c86-a633-8e2ded360424
+		summarizeBy: none
+		sourceColumn: target_period
+
+		variation Variation
+			isDefault
+			relationship: 52cc521f-3069-4ac8-820d-cdf8b9696559
+			defaultHierarchy: LocalDateTable_804ca46a-ca8d-4ead-948e-9cf66a078d5f.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'เปลี่ยนแปลงที่ทาย (%)'
+		dataType: double
+		lineageTag: 3943f96b-017c-4e84-8fab-1c855e43808c
+		summarizeBy: sum
+		sourceColumn: predicted_change_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'เปลี่ยนแปลงจริง (%)'
+		dataType: double
+		lineageTag: 231c607a-528f-4c6e-8ee7-f94926bf0eb8
+		summarizeBy: sum
+		sourceColumn: actual_change_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column โมเดลเทรนถึงเดือน
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4162c76d-410a-475d-8e1d-b22e56ab8504
+		summarizeBy: none
+		sourceColumn: model_trained_through
+
+		variation Variation
+			isDefault
+			relationship: eb69bd14-debb-43a0-b6f1-898485a2d83d
+			defaultHierarchy: LocalDateTable_ac6a27ef-93d4-4a1b-937e-6edc126db679.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition ผลทายย้อนหลังของโมเดล = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("D:\cost-of-living-pipeline\exports\cost_of_living_powerbi_lite.xlsx"), null, true),
+				    fact_model_backtest_Sheet = Source{[Item="fact_model_backtest",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(fact_model_backtest_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"area_key", type text}, {"commodity_code", Int64.Type}, {"base_period", type date}, {"target_period", type date}, {"predicted_change_pct", type number}, {"actual_change_pct", type number}, {"model_trained_through", type date}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
