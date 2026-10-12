@@ -261,7 +261,9 @@ def prices() -> list[dict[str, Any]]:
         forecast AS (
             SELECT commodity_code, predicted_change_pct, base_period, target_period FROM cpi_forecasts
             WHERE area_type = 'region' AND area_code = '10'
-              AND target_period = (SELECT MAX(target_period) FROM cpi_forecasts)
+              AND target_period = (
+                  SELECT MAX(target_period) FROM cpi_forecasts WHERE area_type = 'region' AND area_code = '10'
+              )
         )
         SELECT p.product_id, p.label, p.unit, p.product_group, p.cpi_code,
                d.price_date, d.price_min, d.price_max,
@@ -495,7 +497,11 @@ def forecast_top(area_key: str = "region:TG", n: int = Query(8, ge=3, le=20)) ->
                f.predicted_index, f.target_period
         FROM cpi_forecasts f JOIN dim_commodity d USING (commodity_code)
         WHERE f.area_type = %s AND f.area_code = %s AND d.level = 3
-          AND f.target_period = (SELECT MAX(target_period) FROM cpi_forecasts)
+          -- ผลทายล่าสุดของพื้นที่นี้ (CPI จังหวัดประกาศช้ากว่าระดับประเทศ จึงไม่ใช้เดือนล่าสุดของทั้งตาราง)
+          AND f.target_period = (
+              SELECT MAX(target_period) FROM cpi_forecasts x
+              WHERE x.area_type = f.area_type AND x.area_code = f.area_code
+          )
         ORDER BY f.predicted_change_pct DESC
         """,
         (area_type, area_code),

@@ -188,7 +188,7 @@ EXPORT_QUERIES = {
         WHERE d.level <= {max_level}
         ORDER BY 1, 2, 3
     """,
-    # ผลพยากรณ์ล่าสุดของแต่ละ series
+    # ผลพยากรณ์ล่าสุดของแต่ละ series (นับแยกพื้นที่: CPI จังหวัดประกาศช้ากว่าระดับประเทศ 1 เดือน)
     "fact_forecast.csv": """
         SELECT f.area_type || ':' || f.area_code AS area_key, f.commodity_code,
                f.base_period, f.target_period, f.base_index, f.predicted_index,
@@ -197,7 +197,10 @@ EXPORT_QUERIES = {
                     WHEN f.predicted_change_pct < -0.05 THEN 'ลง' ELSE 'ทรงตัว' END AS direction,
                f.model_name, f.predicted_at
         FROM cpi_forecasts f
-        WHERE f.target_period = (SELECT MAX(target_period) FROM cpi_forecasts)
+        WHERE f.target_period = (
+            SELECT MAX(target_period) FROM cpi_forecasts x
+            WHERE x.area_type = f.area_type AND x.area_code = f.area_code
+        )
         ORDER BY 1, 2
     """,
     "fact_price_estimates.csv": """

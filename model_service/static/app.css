@@ -169,6 +169,9 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: 0; }
 }
 .ai-value { font-family: var(--display); font-size: 34px; font-weight: 700; line-height: 1.15; }
 .ai-value b { color: var(--ai); }
+.ai-pending { font-size: 26px; color: var(--ai); animation: ai-pending 1.6s ease-in-out infinite; }
+@keyframes ai-pending { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .ai-pending { animation: none; } }
 .ai-rows { display: flex; flex-direction: column; }
 .ai-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
 .ai-row span { font-size: 15px; color: var(--ink-2); }

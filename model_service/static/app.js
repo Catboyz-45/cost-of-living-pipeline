@@ -536,7 +536,7 @@
       const yoy = yoyPct(fuel);
       if (yoy !== null) fuelTile.querySelector(".sub").replaceWith(deltaNode(yoy, "% จากปีก่อน"));
     }
-    renderAiBanner(summary.forecast["00000"], products);
+    renderAiBanner(summary.forecast["00000"], products, summary.latest_period);
     renderDishes();
 
     // หมวดค่าใช้จ่ายจริงเท่านั้น (ตัดกลุ่มสำหรับนักวิเคราะห์) เรียงจากแพงขึ้นมากสุด
@@ -829,13 +829,26 @@
   }
 
   // ---------- แถบ AI บนหน้าแรก ----------
-  function renderAiBanner(fc, products) {
+  function renderAiBanner(fc, products, latestPeriod) {
     const card = $("ai-banner");
     const stage = $("ai-stage");
     card.replaceChildren();
-    if (!fc) { stage.hidden = true; return; }
-    // บอทโผล่หลังมีตัวเลขในการ์ดแล้ว ไม่โผล่ค้างอยู่บนการ์ดว่าง
+    // บอทโผล่หลังการ์ดมีเนื้อหาแล้ว ไม่โผล่ค้างอยู่บนการ์ดว่าง
     stage.classList.add("peek");
+    // ช่วงที่ CPI เดือนใหม่เข้ามาแล้วแต่ Airflow ยังทายไม่เสร็จ: บอกว่ากำลังทาย แทนการซ่อนการ์ด
+    if (!fc) {
+      const base = parseDate(latestPeriod);
+      const next = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+      const link = withIcon(el("a", "ai-link", "ดูว่า AI ทายแม่นแค่ไหน"), "arrow");
+      link.href = "#forecast";
+      card.append(
+        aiLabel(`AI ทายเดือน ${monthLabel(next)}`),
+        el("div", "ai-value ai-pending", "AI กำลังทายเดือนถัดไป…"),
+        el("p", "muted", `ข้อมูลเดือน ${thMonth(latestPeriod)} เพิ่งเข้าระบบ ผลทายจะขึ้นที่นี่เมื่อระบบอัปเดตเสร็จ`),
+        link,
+      );
+      return;
+    }
     const value = el("div", "ai-value", `ของโดยรวมจะ${fc.predicted_change_pct >= 0 ? "แพงขึ้นอีก" : "ถูกลง"} `);
     const aiPct = el("b");
     value.appendChild(aiPct);
