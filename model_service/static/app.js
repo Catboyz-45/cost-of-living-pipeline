@@ -1229,7 +1229,7 @@
   let basketProducts = new Map();
   let basketHistory = null; // { key, data }
   let basketChartDrawn = false;
-  const shop = { query: "", group: "", sort: "staple", limit: 24, cards: new Map() };
+  const shop = { query: "", group: "", sort: "staple", page: 0, cards: new Map() };
   const SHOP_PAGE = 24;
   const inBasket = (id) => basket.some((i) => i.id === id);
   const basketItem = (id) => basket.find((i) => i.id === id);
@@ -1422,15 +1422,17 @@
     grid.replaceChildren();
     shop.cards.clear();
     if (!matched.length) grid.appendChild(el("div", "empty-state", "ไม่พบสินค้าที่ค้นหา"));
-    for (const [i, p] of matched.slice(0, shop.limit).entries()) {
+    const pageCount = Math.max(1, Math.ceil(matched.length / SHOP_PAGE));
+    shop.page = Math.min(shop.page, pageCount - 1);
+    const start = shop.page * SHOP_PAGE;
+    for (const [i, p] of matched.slice(start, start + SHOP_PAGE).entries()) {
       const card = shopCard(p);
       card.style.setProperty("--i", String(i % PAGE_SIZE));
       shop.cards.set(p.product_id, card);
       grid.appendChild(card);
     }
     $("shop-count").textContent = `${compact(matched.length)} รายการ${q ? ` ที่ตรงกับ "${q}"` : ""}`;
-    $("shop-more").hidden = matched.length <= shop.limit;
-    $("shop-more").textContent = `ดูสินค้าเพิ่ม (เหลืออีก ${compact(matched.length - shop.limit)} รายการ)`;
+    drawPager($("shop-pager"), shop.page, pageCount);
   }
 
   function drawCart() {
@@ -1539,14 +1541,22 @@
         const button = event.target.closest("button[data-group]");
         if (!button) return;
         shop.group = button.dataset.group;
-        shop.limit = SHOP_PAGE;
+        shop.page = 0;
         chips.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === button));
         drawShop();
       });
-      $("shop-search").addEventListener("input", (event) => { shop.query = event.target.value; shop.limit = SHOP_PAGE; drawShop(); });
+      $("shop-search").addEventListener("input", (event) => { shop.query = event.target.value; shop.page = 0; drawShop(); });
       picker($("shop-sort"));
-      $("shop-sort").addEventListener("change", () => { shop.sort = $("shop-sort").value; drawShop(); });
-      $("shop-more").addEventListener("click", () => { shop.limit += SHOP_PAGE; drawShop(); });
+      $("shop-sort").addEventListener("change", () => { shop.sort = $("shop-sort").value; shop.page = 0; drawShop(); });
+      $("shop-pager").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-page]");
+        if (!button || button.disabled) return;
+        shop.page = Number(button.dataset.page);
+        drawShop();
+        // เปลี่ยนหน้าแล้วเลื่อนกลับไปต้นรายการ ถ้าหัวรายการเลื่อนพ้นจอไปแล้ว
+        const grid = $("shop-grid");
+        if (grid.getBoundingClientRect().top < 80) grid.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       $("basket-reset").addEventListener("click", () => { basket = DEFAULT_BASKET.map((i) => ({ ...i })); saveBasket(); drawShop(); drawCart(); });
       $("basket-clear").addEventListener("click", () => { basket = []; saveBasket(); drawShop(); drawCart(); });
       $("cart-summary").addEventListener("click", openSummary);
