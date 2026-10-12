@@ -1,0 +1,104 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "5a55fcff4b4d4848972b",
+  "position": {
+    "x": 650,
+    "y": 440,
+    "z": 7,
+    "height": 260,
+    "width": 610,
+    "tabOrder": 7
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "หมวดสินค้า"
+                    }
+                  },
+                  "Property": "หมวดสินค้า"
+                }
+              },
+              "queryRef": "หมวดสินค้า.หมวดสินค้า",
+              "nativeQueryRef": "หมวดสินค้า",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "พยากรณ์เดือนหน้า"
+                    }
+                  },
+                  "Property": "AI ทายตามหมวดหลัก (%)"
+                }
+              },
+              "queryRef": "พยากรณ์เดือนหน้า.AI ทายตามหมวดหลัก (%)",
+              "nativeQueryRef": "AI ทายตามหมวดหลัก (%)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "พยากรณ์เดือนหน้า"
+                  }
+                },
+                "Property": "AI ทายตามหมวดหลัก (%)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'AI ทายเดือนถัดไป ตามหมวดหลัก (%)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

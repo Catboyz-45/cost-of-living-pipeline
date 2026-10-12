@@ -84,7 +84,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'เงินเฟ้อทั่วไปเทียบปีก่อน รายจังหวัด (%)'"
+                  "Value": "'เงินเฟ้อทั่วไปเทียบปีก่อน รายจังหวัด (%) · ดูรายจังหวัดที่หน้า รายละเอียดจังหวัด'"
                 }
               }
             },
@@ -100,5 +100,37 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "0b7a5f01cc4d6420bc9e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "พื้นที่"
+              }
+            },
+            "Property": "ชื่อพื้นที่"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c1db3c31c2f01c804e47",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "ดัชนีราคา จังหวัด 36 เดือน"
+              }
+            },
+            "Property": "เงินเฟ้อจังหวัด (%)"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

@@ -1,0 +1,160 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "957208dcd335407b8015",
+  "position": {
+    "x": 20,
+    "y": 20,
+    "z": 0,
+    "height": 680,
+    "width": 1240,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "decompositionTreeVisual",
+    "query": {
+      "queryState": {
+        "Analyze": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ดัชนีราคา จังหวัด 36 เดือน"
+                    }
+                  },
+                  "Property": "เงินเฟ้อหมวดหลัก เดือนล่าสุด (%)"
+                }
+              },
+              "queryRef": "ดัชนีราคา จังหวัด 36 เดือน.เงินเฟ้อหมวดหลัก เดือนล่าสุด (%)",
+              "nativeQueryRef": "เงินเฟ้อหมวดหลัก เดือนล่าสุด (%)"
+            }
+          ]
+        },
+        "ExplainBy": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "พื้นที่"
+                    }
+                  },
+                  "Property": "ภาค"
+                }
+              },
+              "queryRef": "พื้นที่.ภาค",
+              "nativeQueryRef": "ภาค",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "พื้นที่"
+                    }
+                  },
+                  "Property": "ชื่อพื้นที่"
+                }
+              },
+              "queryRef": "พื้นที่.ชื่อพื้นที่",
+              "nativeQueryRef": "ชื่อพื้นที่",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "หมวดสินค้า"
+                    }
+                  },
+                  "Property": "หมวดสินค้า"
+                }
+              },
+              "queryRef": "หมวดสินค้า.หมวดสินค้า",
+              "nativeQueryRef": "หมวดสินค้า",
+              "active": false
+            }
+          ]
+        }
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "ExplainBy"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "พื้นที่.ภาค"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "พื้นที่.ชื่อพื้นที่"
+            ],
+            "isCollapsed": true
+          },
+          {
+            "queryRefs": [
+              "หมวดสินค้า.หมวดสินค้า"
+            ],
+            "isCollapsed": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "tree": [
+        {
+          "properties": {
+            "effectiveBarsPerLevel": {
+              "expr": {
+                "Literal": {
+                  "Value": "8L"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'เงินเฟ้อเดือนล่าสุดเฉลี่ยหมวดหลัก (%) · กด + เพื่อแตกตามภาค จังหวัด หรือหมวดสินค้า'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
