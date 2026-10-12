@@ -9,6 +9,18 @@ table 'ดัชนีราคา จังหวัด 36 เดือน'
 		formatString: 0.00
 		lineageTag: 6cb73be2-faeb-41d0-ae2b-c35d399a9a08
 
+	measure 'เงินเฟ้อหมวดหลัก เดือนล่าสุด (%)' = VAR d = CALCULATE(MAX('ดัชนีราคา จังหวัด 36 เดือน'[เดือน]), REMOVEFILTERS()) RETURN CALCULATE(AVERAGE('ดัชนีราคา จังหวัด 36 เดือน'[เปลี่ยนจากปีก่อน (%)]), 'ดัชนีราคา จังหวัด 36 เดือน'[เดือน] = d, KEEPFILTERS('ดัชนีราคา จังหวัด 36 เดือน'[รหัสหมวดสินค้า] IN {10000,20000,30000,40000,50000,60000,70000}))
+		formatString: 0.00
+		lineageTag: 161fe7ef-ba07-4bd0-87ef-9b5b14506c9b
+
+	measure ดัชนีรวมของพื้นที่ = CALCULATE(AVERAGE('ดัชนีราคา จังหวัด 36 เดือน'[ดัชนี (ปี 2566 = 100)]), 'ดัชนีราคา จังหวัด 36 เดือน'[รหัสหมวดสินค้า] = 0)
+		formatString: 0.0
+		lineageTag: 9137c3d7-b98e-4af8-8563-cf864764619c
+
+	measure 'เงินเฟ้อตามหมวดหลักของจังหวัด (%)' = VAR d = CALCULATE(MAX('ดัชนีราคา จังหวัด 36 เดือน'[เดือน]), REMOVEFILTERS()) RETURN IF(SELECTEDVALUE('หมวดสินค้า'[รหัสหมวดสินค้า]) IN {10000,20000,30000,40000,50000,60000,70000}, CALCULATE(AVERAGE('ดัชนีราคา จังหวัด 36 เดือน'[เปลี่ยนจากปีก่อน (%)]), 'ดัชนีราคา จังหวัด 36 เดือน'[เดือน] = d))
+		formatString: 0.00
+		lineageTag: e85e15ea-3d6e-4123-a617-3458789763b4
+
 	column 'รหัสพื้นที่ (คีย์)'
 		dataType: string
 		lineageTag: 388e88c7-17d9-4f39-b931-6906ce316de6

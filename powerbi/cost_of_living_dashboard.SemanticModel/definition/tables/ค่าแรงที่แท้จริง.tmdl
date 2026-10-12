@@ -17,6 +17,10 @@ table ค่าแรงที่แท้จริง
 		formatString: 0.00
 		lineageTag: aa0a3181-12b5-4aa6-9335-779ed6310c61
 
+	measure 'ค่าแรงที่แท้จริงล่าสุด (บาท)' = VAR d = CALCULATE(MAX('ค่าแรงที่แท้จริง'[เดือน]), REMOVEFILTERS('ค่าแรงที่แท้จริง'[เดือน])) RETURN CALCULATE(AVERAGE('ค่าแรงที่แท้จริง'[ค่าแรงที่แท้จริง (บาท ปี 2566)]), 'ค่าแรงที่แท้จริง'[เดือน] = d)
+		formatString: 0
+		lineageTag: d17a3b2d-fa11-41f5-81c6-8fa22b7cdcda
+
 	column 'รหัสพื้นที่ (คีย์)'
 		dataType: string
 		lineageTag: 3232c299-623f-475f-844e-06efc1f4bf7c

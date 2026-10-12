@@ -12,6 +12,10 @@ table พยากรณ์เดือนหน้า
 	measure 'เดือนที่ AI ทาย' = FORMAT(CALCULATE(MAX('พยากรณ์เดือนหน้า'[เดือนที่ทาย]), REMOVEFILTERS()), "mmm yyyy")
 		lineageTag: 35f1748f-d386-4d3f-bd19-d546589a38e6
 
+	measure 'AI ทายตามหมวดหลัก (%)' = VAR d = CALCULATE(MAX('พยากรณ์เดือนหน้า'[เดือนที่ทาย]), REMOVEFILTERS('พยากรณ์เดือนหน้า'[เดือนที่ทาย])) RETURN IF(SELECTEDVALUE('หมวดสินค้า'[รหัสหมวดสินค้า]) IN {0,10000,20000,30000,40000,50000,60000,70000}, CALCULATE(AVERAGE('พยากรณ์เดือนหน้า'[เปลี่ยนแปลงที่ทาย (%)]), 'พยากรณ์เดือนหน้า'[เดือนที่ทาย] = d))
+		formatString: 0.00
+		lineageTag: c484ae08-c100-419c-8932-e05a1d627d50
+
 	column 'รหัสพื้นที่ (คีย์)'
 		dataType: string
 		lineageTag: 249f4a00-77cc-4cc3-9fde-bec8b0c1fa03

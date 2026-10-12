@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>ค่าครองชีพไทย</title>
-<link rel="icon" type="image/png" href="/static/favicon.png?v=52">
-<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=52">
+<link rel="icon" type="image/png" href="/static/favicon.png?v=55">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=55">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css?v=52">
+<link rel="stylesheet" href="/static/app.css?v=55">
 </head>
 <body>
 <div class="app">
   <header class="topbar">
     <a class="brand" href="#overview">
-      <img class="brand-mark" src="/static/logo.png?v=52" alt="" width="40" height="40">
+      <img class="brand-mark" src="/static/logo.png?v=55" alt="" width="40" height="40">
       <span class="brand-text">
         <strong>ค่าครองชีพไทย</strong>
         <small id="freshness">กำลังโหลด…</small>
@@ -95,9 +95,9 @@
           </div>
           <label class="search" data-icon="search"><span class="sr-only">ค้นหาสินค้า</span><input id="price-search" type="search" placeholder="ค้นหา เช่น ไข่ หมู คะน้า" autocomplete="off"></label>
         </div>
-        <div class="chips chips-wrap" id="price-groups" role="group" aria-label="กลุ่มสินค้า" hidden></div>
+        <div class="chips chips-wrap" id="price-groups" role="group" aria-label="กลุ่มสินค้า"></div>
         <div class="price-grid" id="price-grid"></div>
-        <div class="more-row"><button class="outline" id="price-more" hidden>ดูสินค้าอื่น</button></div>
+        <nav class="pager" id="price-pager" aria-label="หน้าของรายการสินค้า" hidden></nav>
         <article class="card" id="price-detail" hidden>
           <div class="card-head">
             <div><h2 id="price-title">ราคาย้อนหลัง</h2><p class="muted">กดการ์ดสินค้าด้านบนเพื่อเปลี่ยน</p></div>
@@ -247,7 +247,7 @@
           <div class="chips shop-groups" id="shop-groups" role="group" aria-label="หมวดสินค้า"></div>
           <p class="muted" id="shop-count"></p>
           <div class="shop-grid" id="shop-grid"></div>
-          <div class="more-row"><button type="button" class="outline" id="shop-more" hidden>ดูสินค้าเพิ่ม</button></div>
+          <nav class="pager" id="shop-pager" aria-label="หน้าของรายการสินค้าในร้าน" hidden></nav>
         </div>
         <aside class="cart" id="cart" aria-label="ตะกร้าสินค้า">
           <div class="cart-head">
@@ -349,8 +349,8 @@
   </main>
 </div>
 <div class="tooltip" id="tooltip" role="status" hidden></div>
-<script src="/static/icons.js?v=52"></script>
-<script src="/static/charts.js?v=52"></script>
-<script src="/static/app.js?v=52"></script>
+<script src="/static/icons.js?v=55"></script>
+<script src="/static/charts.js?v=55"></script>
+<script src="/static/app.js?v=55"></script>
 </body>
 </html>

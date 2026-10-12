@@ -1,6 +1,9 @@
 table พื้นที่
 	lineageTag: 340d2a92-f00d-4c52-b459-806f08c31762
 
+	measure จังหวัดที่เลือก = IF(HASONEVALUE('พื้นที่'[ชื่อพื้นที่]), SELECTEDVALUE('พื้นที่'[ชื่อพื้นที่]), "ทุกจังหวัด")
+		lineageTag: 1088439a-99eb-450f-8431-8c90ab6abab4
+
 	column 'รหัสพื้นที่ (คีย์)'
 		dataType: string
 		lineageTag: 0d7ffca4-9763-4fe3-b275-f2aa301ffe93

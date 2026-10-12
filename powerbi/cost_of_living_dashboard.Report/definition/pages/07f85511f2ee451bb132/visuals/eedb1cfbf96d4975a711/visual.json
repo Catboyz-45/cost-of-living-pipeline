@@ -1,0 +1,100 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "eedb1cfbf96d4975a711",
+  "position": {
+    "x": 20,
+    "y": 160,
+    "z": 4,
+    "height": 540,
+    "width": 760,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ผลทายย้อนหลังของโมเดล"
+                    }
+                  },
+                  "Property": "เดือนที่ทาย"
+                }
+              },
+              "queryRef": "ผลทายย้อนหลังของโมเดล.เดือนที่ทาย",
+              "nativeQueryRef": "เดือนที่ทาย",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ผลทายย้อนหลังของโมเดล"
+                    }
+                  },
+                  "Property": "คลาดเคลื่อนเฉลี่ย AI (จุด %)"
+                }
+              },
+              "queryRef": "ผลทายย้อนหลังของโมเดล.คลาดเคลื่อนเฉลี่ย AI (จุด %)",
+              "nativeQueryRef": "คลาดเคลื่อนเฉลี่ย AI (จุด %)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ผลทายย้อนหลังของโมเดล"
+                    }
+                  },
+                  "Property": "คลาดเคลื่อนถ้าเดาว่าเท่าเดิม (จุด %)"
+                }
+              },
+              "queryRef": "ผลทายย้อนหลังของโมเดล.คลาดเคลื่อนถ้าเดาว่าเท่าเดิม (จุด %)",
+              "nativeQueryRef": "คลาดเคลื่อนถ้าเดาว่าเท่าเดิม (จุด %)"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'คลาดเคลื่อนเฉลี่ยรายเดือน: AI เทียบกับการเดาว่าราคาเท่าเดิม (จุด %, ยิ่งต่ำยิ่งดี)'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

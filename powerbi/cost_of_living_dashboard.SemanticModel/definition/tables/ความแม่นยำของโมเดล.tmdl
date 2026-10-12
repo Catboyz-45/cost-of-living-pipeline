@@ -1,6 +1,22 @@
 table ความแม่นยำของโมเดล
 	lineageTag: 00ed2d57-b9a5-44f6-b369-48976670f575
 
+	measure 'RMSE โมเดลที่ใช้งาน' = MAXX(TOPN(1, FILTER(ALL('ความแม่นยำของโมเดล'), 'ความแม่นยำของโมเดล'[ใช้งานจริง] = "t"), 'ความแม่นยำของโมเดล'[เวลาที่เทรน], DESC), 'ความแม่นยำของโมเดล'[RMSE])
+		formatString: 0.000
+		lineageTag: 1b56e188-7f72-4bdb-b170-7692142f577f
+
+	measure 'RMSE ถ้าเดาว่าเท่าเดิม' = MAXX(TOPN(1, FILTER(ALL('ความแม่นยำของโมเดล'), 'ความแม่นยำของโมเดล'[ใช้งานจริง] = "t"), 'ความแม่นยำของโมเดล'[เวลาที่เทรน], DESC), 'ความแม่นยำของโมเดล'[RMSE ของ baseline])
+		formatString: 0.000
+		lineageTag: e1cd8712-626d-47b1-8c0e-17a51f8bb0fa
+
+	measure 'ดีกว่าเดาว่าเท่าเดิม (%)' = VAR m = [RMSE โมเดลที่ใช้งาน] VAR b = [RMSE ถ้าเดาว่าเท่าเดิม] RETURN DIVIDE(b - m, b) * 100
+		formatString: 0.0
+		lineageTag: 42a09185-c2ef-405f-b45d-6d467c9d809b
+
+	measure ทายทิศทางถูก = MAXX(TOPN(1, FILTER(ALL('ความแม่นยำของโมเดล'), 'ความแม่นยำของโมเดล'[ใช้งานจริง] = "t"), 'ความแม่นยำของโมเดล'[เวลาที่เทรน], DESC), 'ความแม่นยำของโมเดล'[ทายทิศทางถูก (%)])
+		formatString: 0.0%
+		lineageTag: f3b253d6-f78a-4866-a64d-7dd567ffecd9
+
 	column เวลาที่เทรน
 		dataType: dateTime
 		formatString: General Date

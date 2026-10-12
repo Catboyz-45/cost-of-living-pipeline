@@ -50,19 +50,18 @@
         "sort": [
           {
             "field": {
-              "Measure": {
+              "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "พยากรณ์เดือนหน้า"
+                    "Entity": "หมวดสินค้า"
                   }
                 },
-                "Property": "AI ทาย ทั้งประเทศ (%)"
+                "Property": "หมวดสินค้า"
               }
             },
-            "direction": "Descending"
+            "direction": "Ascending"
           }
-        ],
-        "isDefaultSort": true
+        ]
       }
     },
     "visualContainerObjects": {
