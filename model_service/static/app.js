@@ -326,8 +326,9 @@
   const PAGE_SIZE = 24;
   let selectedProduct = null;
   let priceGroup = "";
-  // หน้าแรกเริ่มที่ของกินพื้นฐาน 6 อย่าง กด "ดูสินค้าอื่น" หรือค้นหาแล้วค่อยแสดงเพิ่ม
-  let priceLimit = STAPLES.length;
+  // หน้าแรกแบ่งหน้าละ 6 รายการ (การ์ด 3×2) หน้า 1 คือของกินพื้นฐาน
+  const PRICE_PAGE_SIZE = 6;
+  let pricePage = 0;
   const perUnit = (unit) => (unit || "").replace(/^บาท/, "");
   const yoyPct = (p) => (p.price_1y_ago ? (p.latest_price / p.price_1y_ago - 1) * 100 : null);
 
@@ -422,12 +423,20 @@
         const button = event.target.closest("button[data-group]");
         if (!button) return;
         priceGroup = button.dataset.group;
-        priceLimit = PAGE_SIZE;
+        pricePage = 0;
         chips.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === button));
         drawPriceGrid(products);
       });
-      $("price-search").addEventListener("input", () => { priceLimit = PAGE_SIZE; drawPriceGrid(products); });
-      $("price-more").addEventListener("click", () => { priceLimit = priceLimit < PAGE_SIZE ? PAGE_SIZE : priceLimit + PAGE_SIZE; drawPriceGrid(products); });
+      $("price-search").addEventListener("input", () => { pricePage = 0; drawPriceGrid(products); });
+      $("price-pager").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-page]");
+        if (!button || button.disabled) return;
+        pricePage = Number(button.dataset.page);
+        drawPriceGrid(products);
+        // เปลี่ยนหน้าแล้วเลื่อนกลับไปต้นรายการ ถ้าหัวรายการเลื่อนพ้นจอไปแล้ว
+        const grid = $("price-grid");
+        if (grid.getBoundingClientRect().top < 80) grid.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
     drawPriceGrid(products);
     if (!selectedProduct) selectedProduct = products.find((p) => p.product_id === STAPLES[0]) || products[0] || null;
@@ -442,6 +451,34 @@
     $("price-detail").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // แถบเลขหน้าแบบ pill: ‹ 1 … 4 5 6 … 40 › (หน้าแรก หน้าสุดท้าย และรอบหน้าปัจจุบัน)
+  function drawPager(nav, current, count) {
+    nav.replaceChildren();
+    nav.hidden = count <= 1;
+    if (count <= 1) return;
+    const pill = (label, page, { current: isCurrent = false, disabled = false, aria } = {}) => {
+      const button = el("button", "pill", label);
+      button.type = "button";
+      button.dataset.page = String(page);
+      button.disabled = disabled;
+      if (isCurrent) button.setAttribute("aria-current", "page");
+      button.setAttribute("aria-label", aria || `หน้า ${page + 1}`);
+      return button;
+    };
+    const pages = new Set([0, count - 1, current - 1, current, current + 1].filter((p) => p >= 0 && p < count));
+    // ช่วงต้นและท้ายแสดงติดกันให้ครบ 5 ปุ่ม ไม่ให้แถบหดเหลือ 3 ปุ่มตอนอยู่หน้าแรกหรือหน้าสุดท้าย
+    if (current <= 2) [1, 2, 3].forEach((p) => p < count && pages.add(p));
+    if (current >= count - 3) [count - 4, count - 3, count - 2].forEach((p) => p >= 0 && pages.add(p));
+    nav.appendChild(pill("‹", current - 1, { disabled: current === 0, aria: "หน้าก่อนหน้า" }));
+    let previous = -1;
+    for (const page of [...pages].sort((a, b) => a - b)) {
+      if (page - previous > 1) nav.appendChild(el("span", "pager-gap", "…"));
+      nav.appendChild(pill(String(page + 1), page, { current: page === current }));
+      previous = page;
+    }
+    nav.appendChild(pill("›", current + 1, { disabled: current === count - 1, aria: "หน้าถัดไป" }));
+  }
+
   function drawPriceGrid(products) {
     const query = $("price-search").value.trim();
     const rank = (p) => { const index = STAPLES.indexOf(p.product_id); return index === -1 ? STAPLES.length : index; };
@@ -452,13 +489,13 @@
     grid.replaceChildren();
     if (!products.length) grid.appendChild(el("div", "empty-state", "ยังไม่มีราคาจริง: รัน DAG เพื่อ scrape ราคาจากกรมการค้าภายใน"));
     else if (!matched.length) grid.appendChild(el("div", "empty-state", "ไม่พบสินค้าที่ค้นหา"));
-    for (const product of matched.slice(0, priceLimit)) priceCard(grid, product);
+    const pageCount = Math.max(1, Math.ceil(matched.length / PRICE_PAGE_SIZE));
+    pricePage = Math.min(pricePage, pageCount - 1);
+    const start = pricePage * PRICE_PAGE_SIZE;
+    for (const product of matched.slice(start, start + PRICE_PAGE_SIZE)) priceCard(grid, product);
     const latest = products.reduce((max, p) => (p.price_date > max ? p.price_date : max), "");
     $("price-count").textContent = products.length ? `${compact(products.length)} รายการ · สำรวจล่าสุด ${thDay(latest)}` : "";
-    $("price-more").hidden = matched.length <= priceLimit;
-    $("price-more").textContent = priceLimit < PAGE_SIZE ? `ดูสินค้าอื่น (ทั้งหมด ${compact(matched.length)} รายการ)` : "แสดงเพิ่ม";
-    // ปุ่มกลุ่มสินค้าแสดงเมื่อเริ่มดูสินค้าอื่นหรือค้นหาแล้ว
-    $("price-groups").hidden = priceLimit < PAGE_SIZE && !query && !priceGroup;
+    drawPager($("price-pager"), pricePage, pageCount);
     document.querySelectorAll(".price-card").forEach((card) => card.classList.toggle("active", card.dataset.product === selectedProduct?.product_id));
   }
 
